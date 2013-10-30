@@ -117,10 +117,14 @@ public class NameNode
             Socket socket = new Socket(dni.getHost(), dni.getPort());
             ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
             oos.writeObject(new HeartBeat());
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            ois.readObject();
+            dni.setAlive(true);
+            ois.close();
             oos.close();
             socket.close();
-          } catch (IOException e) {
-            e.printStackTrace();
+          } catch (Exception e) {
+            /* datanode off-line */
           }
         }
       }

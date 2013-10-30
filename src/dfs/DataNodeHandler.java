@@ -22,11 +22,9 @@ public class DataNodeHandler implements Runnable
       ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
       Message msg = (Message) ois.readObject();
       if (msg instanceof HeartBeat) {
-        Socket nameNodeSocket = new Socket(dataNode.getNameNodeHost(), dataNode.getNameNodePort());
-        ObjectOutputStream oos = new ObjectOutputStream(nameNodeSocket.getOutputStream());
+        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
         oos.writeObject(new HeartBeatACK(dataNode.getId()));
         oos.close();
-        nameNodeSocket.close();
       } else if (msg instanceof PutBlockRequest) {
         PutBlockRequest request = (PutBlockRequest) msg;
         dataNode.putBlock(request.getBlockId(), request.getContent());
