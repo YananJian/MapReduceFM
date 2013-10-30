@@ -21,15 +21,15 @@ public class DataNodeHandler implements Runnable
     try {
       ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
       Message msg = (Message) ois.readObject();
-      if (msg instanceof HeartBeatMessage) {
+      if (msg instanceof HeartBeat) {
         Socket nameNodeSocket = new Socket(dataNode.getNameNodeHost(), dataNode.getNameNodePort());
         ObjectOutputStream oos = new ObjectOutputStream(nameNodeSocket.getOutputStream());
         oos.writeObject(new HeartBeatACK(dataNode.getId()));
         oos.close();
         nameNodeSocket.close();
-      } else if (msg instanceof PutBlockMessage) {
-        PutBlockMessage putBlockMsg = (PutBlockMessage) msg;
-        dataNode.putBlock(putBlockMsg.getBlockId(), putBlockMsg.getContent());
+      } else if (msg instanceof PutBlockRequest) {
+        PutBlockRequest request = (PutBlockRequest) msg;
+        dataNode.putBlock(request.getBlockId(), request.getContent());
       }
       ois.close();
       socket.close();

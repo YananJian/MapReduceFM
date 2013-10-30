@@ -99,6 +99,9 @@ public class NameNode
       }
     }
 
+    /* start service */
+    new NameNodeServer(server, this).run();
+
     /* start healthcheck */
     while (true) {
       try {
@@ -113,7 +116,7 @@ public class NameNode
           try {
             Socket socket = new Socket(dni.getHost(), dni.getPort());
             ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-            oos.writeObject(new HeartBeatMessage());
+            oos.writeObject(new HeartBeat());
             oos.close();
             socket.close();
           } catch (IOException e) {
