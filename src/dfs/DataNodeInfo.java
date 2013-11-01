@@ -11,33 +11,27 @@ public class DataNodeInfo implements Serializable
 {
   private static final long serialVersionUID = 2l;
 
-  private int dataNodeId;
-  private String host;
-  private int port;
+  private int id;
+  private DataNode datanode;
   private boolean alive;
 
   /**
    * Constructor
-   * @param dataNodeId datanode id
-   * @param host host
-   * @param port port number
+   * @param id datanode id
+   * @param datanode remote object
    */
-  public DataNodeInfo(int dataNodeId, String host, int port)
+  public DataNodeInfo(int id, DataNode datanode)
   {
-    this.dataNodeId = dataNodeId;
-    this.host = host;
-    this.port = port;
-    alive = false;
+    this.id = id;
+    this.datanode = datanode;
+    alive = true;
   }
 
-  public int getDataNodeId()
-    { return dataNodeId; }
+  public int getId()
+    { return id; }
 
-  public String getHost()
-    { return host; }
-
-  public int getPort()
-    { return port; }
+  public DataNode getDataNode()
+    { return datanode; }
 
   public boolean isAlive()
     { return alive; }
