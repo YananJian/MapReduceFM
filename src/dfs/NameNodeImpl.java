@@ -1,6 +1,10 @@
 package dfs;
 
 import java.lang.Thread;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Hashtable;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -11,6 +15,7 @@ public class NameNodeImpl implements NameNode
 {
   private int nReplicasDefault;
   private int healthCheckInterval;
+  private int blockSize;
   private int counter;
   private Integer blockCounter;
   private Registry registry;
@@ -22,10 +27,11 @@ public class NameNodeImpl implements NameNode
    * Constructor
    * @param port port of NameNode
    */
-  public NameNodeImpl(int nReplicasDefault, int port, int healthCheckInterval)
+  public NameNodeImpl(int nReplicasDefault, int healthCheckInterval, int blockSize, int port)
   {
     this.nReplicasDefault = nReplicasDefault;
     this.healthCheckInterval = healthCheckInterval;
+    this.blockSize = blockSize;
     counter = 0;
     blockCounter = 0;
     try {
@@ -49,30 +55,41 @@ public class NameNodeImpl implements NameNode
     fileInfos.put(filename, new FileInfo(filename, nReplicas));
   }
 
-  public BlockInfo allocateBlock(String filename) throws RemoteException
+  public int getBlockSize() throws RemoteException
+    { return blockSize; }
+
+  public int getNextBlockId() throws RemoteException
   {
-    FileInfo fi = fileInfos.get(filename);
-    int nReplicas = fi.getNReplicas();
     int blockId = 0;
     synchronized(blockCounter) {
-      blockId = blockCounter++;
+      blockId =  blockCounter++;
     }
-    BlockInfo bi = new BlockInfo(blockId);
-    fi.addBlockId(blockId);
-    /* select DataNode using round-robin policy */
-    for (int i = 0; i < nReplicas;) {
-      int dataNodeId = counter++ % dataNodeInfos.size();
-      if (dataNodeInfos.get(dataNodeId).isAlive()) {
-        bi.addDataNode(dataNodeId);
-        counter++;
-      }
-    }
-    blockInfos.put(blockId, bi);
-    return bi;
+    blockInfos.put(blockId, new BlockInfo(blockId));
+    return blockId;
   }
 
-  public DataNode getDataNode(int id) throws RemoteException
-    { return dataNodeInfos.get(id).getDataNode(); }
+  public int allocateBlock() throws RemoteException
+  {
+    /* select DataNode using round-robin policy */
+    while (true) {
+      int dataNodeId = counter++ % dataNodeInfos.size();
+      if (dataNodeInfos.get(dataNodeId).isAlive())
+        return dataNodeId;
+    }
+  }
+
+  public void commitBlockAllocation(int blockId, int dataNodeId) throws RemoteException
+    { blockInfos.get(blockId).addDataNode(dataNodeId); }
+
+  public Map<Integer, List<Integer>> getAllBlocks(String filename) throws RemoteException
+  {
+    FileInfo fi = fileInfos.get(filename);
+    Map<Integer, List<Integer>> result = new LinkedHashMap<Integer, List<Integer>>();
+    LinkedList<Integer> blockIds = fi.getBlockIds();
+    for (int blockId : blockIds)
+      result.put(blockId, blockInfos.get(blockId).getDataNodeIds());
+    return result;
+  }
 
   public void addDataNode(int id, DataNode datanode)
     { dataNodeInfos.put(id, new DataNodeInfo(id, datanode)); }
@@ -126,12 +143,13 @@ public class NameNodeImpl implements NameNode
 
   public static void main(String[] args)
   {
-    int port = Integer.parseInt(args[0]);
-    int nReplicasDefault = Integer.parseInt(args[1]);
-    int nDataNodes = Integer.parseInt(args[2]);
-    int healthCheckInterval = Integer.parseInt(args[3]);
+    int nReplicasDefault = Integer.parseInt(args[0]);
+    int healthCheckInterval = Integer.parseInt(args[1]);
+    int blockSize = Integer.parseInt(args[2]);
+    int port = Integer.parseInt(args[3]);
+    int nDataNodes = Integer.parseInt(args[4]);
 
-    NameNodeImpl namenode = new NameNodeImpl(nReplicasDefault, port, healthCheckInterval);
+    NameNodeImpl namenode = new NameNodeImpl(nReplicasDefault, healthCheckInterval, blockSize, port);
 
     /* bootstrap */
     namenode.bootstrap(nDataNodes);
