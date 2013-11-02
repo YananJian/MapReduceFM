@@ -36,6 +36,7 @@ public class FileDownloader
       int blockId = entry.getKey();
       List<Integer> dataNodeIds = entry.getValue();
       boolean success = false;
+      /* try to get block from datanodes */
       for (Integer dataNodeId : dataNodeIds) {
         DataNode datanode = (DataNode) registry.lookup(dataNodeId.toString());
         try {
@@ -43,6 +44,7 @@ public class FileDownloader
           success = true;
           break;
         } catch (RemoteException e) {
+          /* datanode is dead */
           continue;
         }
       }

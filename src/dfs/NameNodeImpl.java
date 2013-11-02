@@ -1,12 +1,14 @@
 package dfs;
 
 import java.lang.Thread;
+import java.util.Comparator;
 import java.util.List;
-import java.util.LinkedList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Hashtable;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -19,9 +21,9 @@ public class NameNodeImpl implements NameNode
   private int blockSize;
   private Integer blockCounter;
   private Registry registry;
-  private Hashtable<String, FileInfo> fileInfos;
-  private Hashtable<Integer, BlockInfo> blockInfos;
-  private TreeMap<Integer, DataNodeInfo> dataNodeInfos;
+  private Map<String, FileInfo> fileInfos;
+  private Map<Integer, BlockInfo> blockInfos;
+  private Map<Integer, DataNodeInfo> dataNodeInfos;
 
   /**
    * Constructor
@@ -41,9 +43,7 @@ public class NameNodeImpl implements NameNode
     }
     fileInfos = new Hashtable<String, FileInfo>();
     blockInfos = new Hashtable<Integer, BlockInfo>();
-    Hashtable<Integer, DataNodeInfo> table = new Hashtable<Integer, DataNodeInfo>();
-    DataNodeInfoComparator comparator = new DataNodeInfoComparator(table);
-    dataNodeInfos = new TreeMap<Integer, DataNodeInfo>(comparator);
+    dataNodeInfos = new TreeMap<Integer, DataNodeInfo>();
   }
 
   public void register(int id, DataNode datanode, List<Integer> blockIds) throws RemoteException
@@ -80,7 +80,8 @@ public class NameNodeImpl implements NameNode
   public int allocateBlock() throws RemoteException
   {
     /* select DataNode with least #blocks */
-    for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet())
+    SortedSet<Map.Entry<Integer, DataNodeInfo>> sortedEntries = getSortedEntries(dataNodeInfos);
+    for (Map.Entry<Integer, DataNodeInfo> entry : sortedEntries)
       if (entry.getValue().isAlive())
         return entry.getKey();
     return -1;
@@ -96,7 +97,7 @@ public class NameNodeImpl implements NameNode
   {
     FileInfo fi = fileInfos.get(filename);
     Map<Integer, List<Integer>> result = new LinkedHashMap<Integer, List<Integer>>();
-    LinkedList<Integer> blockIds = fi.getBlockIds();
+    List<Integer> blockIds = fi.getBlockIds();
     for (int blockId : blockIds)
       result.put(blockId, blockInfos.get(blockId).getDataNodeIds());
     return result;
@@ -172,12 +173,28 @@ public class NameNodeImpl implements NameNode
                 /* try next node */
                 continue;
               }
-            }
-          }
+            } /* while */
+          } /* for */
+        } /* catch */
+      } /* for */
+    } /* while */
+  }
+
+  static <K, V extends Comparable<? super V>> SortedSet<Map.Entry<K, V>> getSortedEntries(Map<K, V> map) {
+    SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
+      new Comparator<Map.Entry<K,V>>() {
+        @Override
+        public int compare(Map.Entry<K,V> e1, Map.Entry<K,V> e2)
+        {
+          int res = e1.getValue().compareTo(e2.getValue());
+          return res != 0 ? res : 1;
         }
       }
-    }
+    );
+    sortedEntries.addAll(map.entrySet());
+    return sortedEntries;
   }
+
 
   public static void main(String[] args)
   {
@@ -186,12 +203,9 @@ public class NameNodeImpl implements NameNode
     int blockSize = Integer.parseInt(args[2]);
     int port = Integer.parseInt(args[3]);
     int nDataNodes = Integer.parseInt(args[4]);
-
     NameNodeImpl namenode = new NameNodeImpl(nReplicasDefault, healthCheckInterval, blockSize, port);
-
     /* bootstrap */
     namenode.bootstrap(nDataNodes);
-
     /* register to registry and start health check */
     namenode.healthCheck();
   }

@@ -1,5 +1,6 @@
 package dfs;
 
+import java.util.List;
 import java.util.LinkedList;
 
 /**
@@ -10,7 +11,7 @@ import java.util.LinkedList;
 public class BlockInfo
 {
   private int blockId;
-  private LinkedList<Integer> dataNodeIds;
+  private List<Integer> dataNodeIds;
 
   /**
    * Constructor
@@ -33,7 +34,7 @@ public class BlockInfo
    * Get ids of all data node that have this block
    * @return datanode ids
    */
-  public LinkedList<Integer> getDataNodeIds()
+  public List<Integer> getDataNodeIds()
     { return dataNodeIds; }
 
   /**

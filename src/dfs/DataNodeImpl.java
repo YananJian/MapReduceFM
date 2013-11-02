@@ -21,7 +21,7 @@ public class DataNodeImpl implements DataNode
   private String dir;
   private String registryHost;
   private int registryPort;
-  private LinkedList<Integer> blockIds;
+  private List<Integer> blockIds;
 
   public DataNodeImpl(int id, String dir, String registryHost, int registryPort)
   {
@@ -98,6 +98,10 @@ public class DataNodeImpl implements DataNode
     while (true) {
       try {
         NameNode namenode = (NameNode) registry.lookup("NameNode");
+        if (namenode == null) {
+          System.out.println("Oops");
+          System.out.println(registryHost + registryPort);
+        }
         namenode.register(id, this, blocks);
         System.out.println("Registered");
         break;

@@ -1,5 +1,6 @@
 package dfs;
 
+import java.util.List;
 import java.util.LinkedList;
 
 /**
@@ -11,7 +12,7 @@ public class FileInfo
 {
   private String filename;
   private int nReplicas;
-  private LinkedList<Integer> blockIds;
+  private List<Integer> blockIds;
 
   /**
    * Constructor
@@ -43,7 +44,7 @@ public class FileInfo
    * Get the block ids
    * @return block ids
    */
-  public LinkedList<Integer> getBlockIds()
+  public List<Integer> getBlockIds()
     { return blockIds; }
 
   /**

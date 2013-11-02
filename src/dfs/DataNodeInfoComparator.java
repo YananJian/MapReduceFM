@@ -10,6 +10,7 @@ public class DataNodeInfoComparator implements Comparator<Integer> {
     { this.base = base; }
 
   public int compare(Integer left, Integer right) {
+    System.out.println(1);
     if (base.get(left).getNBlocks() >= base.get(right).getNBlocks())
       return -1;
     else

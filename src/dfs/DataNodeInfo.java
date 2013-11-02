@@ -7,7 +7,7 @@ import java.util.List;
  * @author Yanan Jian
  * @author Erdong Li
  */
-public class DataNodeInfo
+public class DataNodeInfo implements Comparable<DataNodeInfo>
 {
   private int id;
   private DataNode datanode;
@@ -47,4 +47,8 @@ public class DataNodeInfo
 
   public void setAlive(boolean alive)
     { this.alive = alive; }
+
+  @Override
+  public int compareTo(DataNodeInfo other)
+    { return blockIds.size() - other.blockIds.size(); }
 }
