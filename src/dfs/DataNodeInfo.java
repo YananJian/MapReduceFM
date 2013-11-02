@@ -1,17 +1,14 @@
 package dfs;
 
-import java.io.Serializable;
-
 /**
  * DataNode info record
  * @author Yanan Jian
  * @author Erdong Li
  */
-public class DataNodeInfo implements Serializable
+public class DataNodeInfo
 {
-  private static final long serialVersionUID = 2l;
-
   private int id;
+  private int nBlocks;
   private DataNode datanode;
   private boolean alive;
 
@@ -20,15 +17,22 @@ public class DataNodeInfo implements Serializable
    * @param id datanode id
    * @param datanode remote object
    */
-  public DataNodeInfo(int id, DataNode datanode)
+  public DataNodeInfo(int id, int nBlocks, DataNode datanode)
   {
     this.id = id;
+    this.nBlocks = nBlocks;
     this.datanode = datanode;
     alive = true;
   }
 
   public int getId()
     { return id; }
+
+  public int getNBlocks()
+    { return nBlocks; }
+
+  public void setNBlocks(int nBlocks)
+    { this.nBlocks = nBlocks; }
 
   public DataNode getDataNode()
     { return datanode; }

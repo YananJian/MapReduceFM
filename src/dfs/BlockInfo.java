@@ -1,6 +1,5 @@
 package dfs;
 
-import java.io.Serializable;
 import java.util.LinkedList;
 
 /**
@@ -8,10 +7,8 @@ import java.util.LinkedList;
  * @author Yanan Jian
  * @author Erdong Li
  */
-public class BlockInfo implements Serializable
+public class BlockInfo
 {
-  private static final long serialVersionUID = 1l;
-
   private int blockId;
   private LinkedList<Integer> dataNodeIds;
 

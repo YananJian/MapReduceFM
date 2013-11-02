@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Hashtable;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -16,12 +17,11 @@ public class NameNodeImpl implements NameNode
   private int nReplicasDefault;
   private int healthCheckInterval;
   private int blockSize;
-  private int counter;
   private Integer blockCounter;
   private Registry registry;
   private Hashtable<String, FileInfo> fileInfos;
   private Hashtable<Integer, BlockInfo> blockInfos;
-  private Hashtable<Integer, DataNodeInfo> dataNodeInfos;
+  private TreeMap<Integer, DataNodeInfo> dataNodeInfos;
 
   /**
    * Constructor
@@ -32,7 +32,6 @@ public class NameNodeImpl implements NameNode
     this.nReplicasDefault = nReplicasDefault;
     this.healthCheckInterval = healthCheckInterval;
     this.blockSize = blockSize;
-    counter = 0;
     blockCounter = 0;
     try {
       registry = LocateRegistry.createRegistry(port);
@@ -42,11 +41,21 @@ public class NameNodeImpl implements NameNode
     }
     fileInfos = new Hashtable<String, FileInfo>();
     blockInfos = new Hashtable<Integer, BlockInfo>();
-    dataNodeInfos = new Hashtable<Integer, DataNodeInfo>();
+    Hashtable<Integer, DataNodeInfo> table = new Hashtable<Integer, DataNodeInfo>();
+    DataNodeInfoComparator comparator = new DataNodeInfoComparator(table);
+    dataNodeInfos = new TreeMap<Integer, DataNodeInfo>(comparator);
   }
 
-  public void register(int id, DataNode datanode) throws RemoteException
-    { dataNodeInfos.put(id, new DataNodeInfo(id, datanode)); }
+  public void register(int id, DataNode datanode, List<Integer> blockIds) throws RemoteException
+  {
+    dataNodeInfos.put(id, new DataNodeInfo(id, blockIds.size(), datanode));
+    for (int blockId : blockIds) {
+      if (blockInfos.get(blockId) == null)
+        blockInfos.put(blockId, new BlockInfo(blockId));
+      if (!blockInfos.get(blockId).getDataNodeIds().contains(id))
+        blockInfos.get(blockId).addDataNode(id);
+    }
+  }
 
   public void createFile(String filename, int nReplicas) throws RemoteException
   {
@@ -70,12 +79,11 @@ public class NameNodeImpl implements NameNode
 
   public int allocateBlock() throws RemoteException
   {
-    /* select DataNode using round-robin policy */
-    while (true) {
-      int dataNodeId = counter++ % dataNodeInfos.size();
-      if (dataNodeInfos.get(dataNodeId).isAlive())
-        return dataNodeId;
-    }
+    /* select DataNode with least #blocks */
+    for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet())
+      if (entry.getValue().isAlive())
+        return entry.getKey();
+    return -1;
   }
 
   public void commitBlockAllocation(int blockId, int dataNodeId) throws RemoteException
@@ -90,9 +98,6 @@ public class NameNodeImpl implements NameNode
       result.put(blockId, blockInfos.get(blockId).getDataNodeIds());
     return result;
   }
-
-  public void addDataNode(int id, DataNode datanode)
-    { dataNodeInfos.put(id, new DataNodeInfo(id, datanode)); }
 
   public void bootstrap(int nDataNodes)
   {

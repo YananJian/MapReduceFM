@@ -4,9 +4,11 @@ import java.lang.Thread;
 import java.lang.InterruptedException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
 import java.util.LinkedList;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -62,14 +64,41 @@ public class DataNodeImpl implements DataNode
 
   public void bootstrap()
   {
+    /* get all blocks */
+    File folder = new File(dir);
+    List<Integer> blocks = new LinkedList<Integer>();
+    for (File file : folder.listFiles())
+      blocks.add(Integer.parseInt(file.getName()));
+    Registry registry = null;
+    DataNode stub = null;
+    try {
+      stub = (DataNode) UnicastRemoteObject.exportObject(this, 0);
+    } catch (RemoteException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+    /* rebind to registry */
     while (true) {
       System.out.println("Trying to register self");
       try {
-        Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
-        DataNode stub = (DataNode) UnicastRemoteObject.exportObject(this, 0);
+        registry = LocateRegistry.getRegistry(registryHost, registryPort);
         registry.rebind(Integer.toString(id), stub);
+        break;
+      } catch (Exception e) {
+        /* NameNode not ready, keep trying */
+        e.printStackTrace();
+        try {
+          Thread.sleep(5000);
+        } catch (InterruptedException ie) {
+          e.printStackTrace();
+        }
+      }
+    }
+    /* register to namenode */
+    while (true) {
+      try {
         NameNode namenode = (NameNode) registry.lookup("NameNode");
-        namenode.register(id, this);
+        namenode.register(id, this, blocks);
         System.out.println("Registered");
         break;
       } catch (Exception e) {

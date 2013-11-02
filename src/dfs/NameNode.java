@@ -7,7 +7,7 @@ import java.rmi.RemoteException;
 
 public interface NameNode extends Remote
 {
-  public void register(int id, DataNode datanode) throws RemoteException;
+  public void register(int id, DataNode datanode, List<Integer> blockIds) throws RemoteException;
   public void createFile(String filename, int nReplicas) throws RemoteException;
   public int getBlockSize() throws RemoteException;
   public int getNextBlockId() throws RemoteException;

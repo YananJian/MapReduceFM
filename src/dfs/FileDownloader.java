@@ -3,7 +3,6 @@ package dfs;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.rmi.NotBoundException;
@@ -33,9 +32,7 @@ public class FileDownloader
     NameNode namenode = (NameNode) registry.lookup("NameNode");
     Map<Integer, List<Integer>> blocks = namenode.getAllBlocks(filename);
     BufferedWriter bw = new BufferedWriter(new FileWriter(path));
-    Iterator<Map.Entry<Integer, List<Integer>>> itor = blocks.entrySet().iterator();
-    while (itor.hasNext()) {
-      Map.Entry<Integer, List<Integer>> entry = itor.next();
+    for (Map.Entry<Integer, List<Integer>> entry : blocks.entrySet()) {
       int blockId = entry.getKey();
       List<Integer> dataNodeIds = entry.getValue();
       boolean success = false;
