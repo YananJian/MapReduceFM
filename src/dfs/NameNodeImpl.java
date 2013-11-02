@@ -103,6 +103,25 @@ public class NameNodeImpl implements NameNode
     return result;
   }
 
+  public String describeDFS() throws RemoteException
+  {
+    StringBuilder dfs = new StringBuilder();
+    dfs.append("========= dfs info =========\n");
+    dfs.append("#default replicas: " + nReplicasDefault + "\n");
+    dfs.append("healthcheck interval: " + healthCheckInterval + " second\n");
+    dfs.append("block size: " + blockSize + " byte\n");
+    dfs.append("========= file info =========\n");
+    for (Map.Entry<String, FileInfo> entry : fileInfos.entrySet())
+      dfs.append(entry.getValue().toString() + "\n");
+    dfs.append("========= block info =========\n");
+    for (Map.Entry<Integer, BlockInfo> entry : blockInfos.entrySet())
+      dfs.append(entry.getValue().toString() + "\n");
+    dfs.append("========= datanode info =========\n");
+    for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet())
+      dfs.append(entry.getValue().toString() + "\n");
+    return dfs.toString();
+  }
+
   public void bootstrap(int nDataNodes)
   {
     /* register itself to registry */

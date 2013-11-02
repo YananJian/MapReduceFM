@@ -51,4 +51,8 @@ public class DataNodeInfo implements Comparable<DataNodeInfo>
   @Override
   public int compareTo(DataNodeInfo other)
     { return blockIds.size() - other.blockIds.size(); }
+
+  @Override
+  public String toString()
+    { return "datanode id: " + id + "\tblock id: " + blockIds.toString() + "\t alive: " + alive; }
 }

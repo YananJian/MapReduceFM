@@ -43,4 +43,8 @@ public class BlockInfo
    */
   public void addDataNode(int dataNodeId)
     { dataNodeIds.add(dataNodeId); }
+
+  @Override
+  public String toString()
+    { return "block id: " + blockId + "\tdatanode id: " + dataNodeIds.toString(); }
 }

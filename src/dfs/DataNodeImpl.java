@@ -66,6 +66,8 @@ public class DataNodeImpl implements DataNode
   {
     /* get all blocks */
     File folder = new File(dir);
+    if (!folder.exists())
+      folder.mkdirs();
     List<Integer> blocks = new LinkedList<Integer>();
     for (File file : folder.listFiles())
       blocks.add(Integer.parseInt(file.getName()));

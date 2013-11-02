@@ -53,4 +53,8 @@ public class FileInfo
    */
   public void addBlockId(int blockId)
     { blockIds.add(blockId); }
+
+  @Override
+  public String toString()
+    { return "filename: " + filename + "\t#replicas: " + nReplicas + "\tblock id: " + blockIds.toString(); }
 }
