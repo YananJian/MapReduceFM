@@ -48,7 +48,7 @@ public class NameNodeImpl implements NameNode
 
   public void register(int id, DataNode datanode, List<Integer> blockIds) throws RemoteException
   {
-    dataNodeInfos.put(id, new DataNodeInfo(id, blockIds.size(), datanode));
+    dataNodeInfos.put(id, new DataNodeInfo(id, datanode, blockIds));
     for (int blockId : blockIds) {
       if (blockInfos.get(blockId) == null)
         blockInfos.put(blockId, new BlockInfo(blockId));
@@ -86,8 +86,11 @@ public class NameNodeImpl implements NameNode
     return -1;
   }
 
-  public void commitBlockAllocation(int blockId, int dataNodeId) throws RemoteException
-    { blockInfos.get(blockId).addDataNode(dataNodeId); }
+  public void commitBlockAllocation(int dataNodeId, int blockId) throws RemoteException
+  {
+    blockInfos.get(blockId).addDataNode(dataNodeId);
+    dataNodeInfos.get(dataNodeId).addBlock(blockId);
+  }
 
   public Map<Integer, List<Integer>> getAllBlocks(String filename) throws RemoteException
   {
@@ -132,14 +135,44 @@ public class NameNodeImpl implements NameNode
       }
       for (int i = 0; i < dataNodeInfos.size(); i++) {
         DataNodeInfo dni = dataNodeInfos.get(i);
-        if (dni.isAlive()) {
-          /* ignore dead nodes */
-          try {
-            dni.getDataNode().heartBeat();
-          } catch (RemoteException e) {
-            /* unreachable */
-            System.out.println("DataNode #" + i + " is dead");
-            dni.setAlive(false);
+        /* ignore dead nodes */
+        if (!dni.isAlive())
+          continue;
+        try {
+          dni.getDataNode().heartBeat();
+        } catch (RemoteException e) {
+          /* unreachable node */
+          dni.setAlive(false);
+          /* move each replica to other node */
+          List<Integer> blockIds = dni.getBlockIds();
+          for (int blockId : blockIds) {
+            /* get all datanodes that has this block */
+            List<Integer> dataNodeIds = blockInfos.get(blockId).getDataNodeIds();
+            String replica = null;
+            /* assume datanodes that have this replica won't all fail at the same time */
+            for (int dataNodeId : dataNodeIds) {
+              if (dataNodeInfos.get(dataNodeId).isAlive()) {
+                /* get replica */
+                try {
+                  dataNodeInfos.get(dataNodeId).getDataNode().getBlock(blockId);
+                } catch (RemoteException re) {
+                  /* try next node */
+                  continue;
+                }
+              }
+            }
+            /* try to place replica */
+            while (true) {
+              try {
+                int dest = allocateBlock();
+                dataNodeInfos.get(dest).getDataNode().putBlock(blockId, replica);
+                commitBlockAllocation(dest, blockId);
+                break;
+              } catch (RemoteException re) {
+                /* try next node */
+                continue;
+              }
+            }
           }
         }
       }

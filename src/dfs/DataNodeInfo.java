@@ -1,5 +1,7 @@
 package dfs;
 
+import java.util.List;
+
 /**
  * DataNode info record
  * @author Yanan Jian
@@ -8,8 +10,8 @@ package dfs;
 public class DataNodeInfo
 {
   private int id;
-  private int nBlocks;
   private DataNode datanode;
+  private List<Integer> blockIds;
   private boolean alive;
 
   /**
@@ -17,25 +19,28 @@ public class DataNodeInfo
    * @param id datanode id
    * @param datanode remote object
    */
-  public DataNodeInfo(int id, int nBlocks, DataNode datanode)
+  public DataNodeInfo(int id, DataNode datanode, List<Integer> blockIds)
   {
     this.id = id;
-    this.nBlocks = nBlocks;
     this.datanode = datanode;
+    this.blockIds = blockIds;
     alive = true;
   }
 
   public int getId()
     { return id; }
 
-  public int getNBlocks()
-    { return nBlocks; }
-
-  public void setNBlocks(int nBlocks)
-    { this.nBlocks = nBlocks; }
-
   public DataNode getDataNode()
     { return datanode; }
+
+  public void addBlock(int blockId)
+    { blockIds.add(blockId); }
+
+  public int getNBlocks()
+    { return blockIds.size(); }
+
+  public List<Integer> getBlockIds()
+    { return blockIds; }
 
   public boolean isAlive()
     { return alive; }

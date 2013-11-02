@@ -12,6 +12,6 @@ public interface NameNode extends Remote
   public int getBlockSize() throws RemoteException;
   public int getNextBlockId() throws RemoteException;
   public int allocateBlock() throws RemoteException;
-  public void commitBlockAllocation(int blockId, int dataNodeId) throws RemoteException;
+  public void commitBlockAllocation(int dataNodeId, int blockId) throws RemoteException;
   public Map<Integer, List<Integer>> getAllBlocks(String filename) throws RemoteException;
 }

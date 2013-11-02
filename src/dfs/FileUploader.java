@@ -49,7 +49,7 @@ public class FileUploader
               /* datanode dead */
               continue;
             }
-            namenode.commitBlockAllocation(blockId, dataNodeId);
+            namenode.commitBlockAllocation(dataNodeId, blockId);
             break;
           }
         }
