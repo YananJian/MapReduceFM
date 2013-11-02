@@ -32,10 +32,10 @@ public class FileUploader
     namenode.createFile(filename, nReplicas);
     /* upload content to datanodes */
     int blockSize = namenode.getBlockSize();
-    StringBuilder content = new StringBuilder();
-    BufferedReader br = new BufferedReader(new FileReader(path));
-    String line = null;
     int blockId = namenode.getNextBlockId();
+    BufferedReader br = new BufferedReader(new FileReader(path));
+    StringBuilder content = new StringBuilder();
+    String line = null;
     while ((line = br.readLine()) != null) {
       if (content.length() != 0 && content.length() + line.length() > blockSize) {
         /* buffer full, put block to datanodes */

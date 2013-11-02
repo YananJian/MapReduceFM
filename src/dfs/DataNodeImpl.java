@@ -2,8 +2,9 @@ package dfs;
 
 import java.lang.Thread;
 import java.lang.InterruptedException;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.LinkedList;
@@ -32,14 +33,27 @@ public class DataNodeImpl implements DataNode
   public void putBlock(int blockId, String content) throws RemoteException
   {
     blockIds.add(blockId);
-    File block = new File(dir + blockId);
     try {
-      block.createNewFile();
-      BufferedWriter bw = new BufferedWriter(new FileWriter(block.getAbsoluteFile()));
+      BufferedWriter bw = new BufferedWriter(new FileWriter(dir + blockId));
       bw.write(content);
       bw.close();
     } catch (IOException e) {
       e.printStackTrace();
+    }
+  }
+
+  public String getBlock(int blockId) throws RemoteException
+  {
+    try {
+      BufferedReader br = new BufferedReader(new FileReader(dir + blockId));
+      StringBuilder content = new StringBuilder();
+      String line = null;
+      while ((line = br.readLine()) != null)
+        content.append(line);
+      br.close();
+      return content.toString();
+    } catch (Exception e) {
+      throw new RemoteException("getBlock:", e);
     }
   }
 
