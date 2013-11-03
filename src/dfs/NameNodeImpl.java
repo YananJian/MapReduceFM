@@ -49,11 +49,12 @@ public class NameNodeImpl implements NameNode
   public void register(int id, DataNode datanode) throws RemoteException
     { dataNodeInfos.put(id, new DataNodeInfo(id, datanode)); }
 
-  public void createFile(String filename, int nReplicas) throws RemoteException
+  public int createFile(String filename, int nReplicas) throws RemoteException
   {
     if (nReplicas == 0)
       nReplicas = nReplicasDefault;
     fileInfos.put(filename, new FileInfo(filename, nReplicas));
+    return nReplicas;
   }
 
   public int getBlockSize() throws RemoteException
@@ -180,7 +181,6 @@ public class NameNodeImpl implements NameNode
             while (true) {
               try {
                 int dest = allocateBlock();
-                System.out.println(dest + "\n" + replica);
                 dataNodeInfos.get(dest).getDataNode().putBlock(blockId, replica);
                 commitBlockAllocation(dest, filename, blockId);
                 break;
