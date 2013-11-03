@@ -11,15 +11,17 @@ import java.util.LinkedList;
 public class BlockInfo
 {
   private int blockId;
+  private String filename;
   private List<Integer> dataNodeIds;
 
   /**
    * Constructor
    * @param blockId block id
    */
-  public BlockInfo(int blockId)
+  public BlockInfo(int blockId, String filename)
   {
     this.blockId = blockId;
+    this.filename = filename;
     dataNodeIds = new LinkedList<Integer>();
   }
 
@@ -29,6 +31,9 @@ public class BlockInfo
    */
   public int getBlockId()
     { return blockId; }
+
+  public String getFileName()
+    { return filename; }
 
   /**
    * Get ids of all data node that have this block
@@ -46,5 +51,5 @@ public class BlockInfo
 
   @Override
   public String toString()
-    { return "block id: " + blockId + "\tdatanode id: " + dataNodeIds.toString(); }
+    { return "block id: " + blockId + "\tfilename: " + filename + "\tdatanode id: " + dataNodeIds.toString(); }
 }

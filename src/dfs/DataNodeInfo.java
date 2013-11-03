@@ -1,6 +1,7 @@
 package dfs;
 
 import java.util.List;
+import java.util.LinkedList;
 
 /**
  * DataNode info record
@@ -19,11 +20,11 @@ public class DataNodeInfo implements Comparable<DataNodeInfo>
    * @param id datanode id
    * @param datanode remote object
    */
-  public DataNodeInfo(int id, DataNode datanode, List<Integer> blockIds)
+  public DataNodeInfo(int id, DataNode datanode)
   {
     this.id = id;
     this.datanode = datanode;
-    this.blockIds = blockIds;
+    this.blockIds = new LinkedList<Integer>();
     alive = true;
   }
 

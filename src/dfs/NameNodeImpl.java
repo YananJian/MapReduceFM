@@ -46,16 +46,8 @@ public class NameNodeImpl implements NameNode
     dataNodeInfos = new TreeMap<Integer, DataNodeInfo>();
   }
 
-  public void register(int id, DataNode datanode, List<Integer> blockIds) throws RemoteException
-  {
-    dataNodeInfos.put(id, new DataNodeInfo(id, datanode, blockIds));
-    for (int blockId : blockIds) {
-      if (blockInfos.get(blockId) == null)
-        blockInfos.put(blockId, new BlockInfo(blockId));
-      if (!blockInfos.get(blockId).getDataNodeIds().contains(id))
-        blockInfos.get(blockId).addDataNode(id);
-    }
-  }
+  public void register(int id, DataNode datanode) throws RemoteException
+    { dataNodeInfos.put(id, new DataNodeInfo(id, datanode)); }
 
   public void createFile(String filename, int nReplicas) throws RemoteException
   {
@@ -67,13 +59,14 @@ public class NameNodeImpl implements NameNode
   public int getBlockSize() throws RemoteException
     { return blockSize; }
 
-  public int getNextBlockId() throws RemoteException
+  public int getNextBlockId(String filename) throws RemoteException
   {
     int blockId = 0;
     synchronized(blockCounter) {
       blockId =  blockCounter++;
     }
-    blockInfos.put(blockId, new BlockInfo(blockId));
+    fileInfos.get(filename).addBlockId(blockId);
+    blockInfos.put(blockId, new BlockInfo(blockId, filename));
     return blockId;
   }
 
@@ -87,7 +80,7 @@ public class NameNodeImpl implements NameNode
     return -1;
   }
 
-  public void commitBlockAllocation(int dataNodeId, int blockId) throws RemoteException
+  public void commitBlockAllocation(int dataNodeId, String filename, int blockId) throws RemoteException
   {
     blockInfos.get(blockId).addDataNode(dataNodeId);
     dataNodeInfos.get(dataNodeId).addBlock(blockId);
@@ -110,13 +103,13 @@ public class NameNodeImpl implements NameNode
     dfs.append("#default replicas: " + nReplicasDefault + "\n");
     dfs.append("healthcheck interval: " + healthCheckInterval + " second\n");
     dfs.append("block size: " + blockSize + " byte\n");
-    dfs.append("========= file info =========\n");
+    dfs.append("\n========= file info =========\n");
     for (Map.Entry<String, FileInfo> entry : fileInfos.entrySet())
       dfs.append(entry.getValue().toString() + "\n");
-    dfs.append("========= block info =========\n");
+    dfs.append("\n========= block info =========\n");
     for (Map.Entry<Integer, BlockInfo> entry : blockInfos.entrySet())
       dfs.append(entry.getValue().toString() + "\n");
-    dfs.append("========= datanode info =========\n");
+    dfs.append("\n========= datanode info =========\n");
     for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet())
       dfs.append(entry.getValue().toString() + "\n");
     return dfs.toString();
@@ -166,6 +159,8 @@ public class NameNodeImpl implements NameNode
           /* move each replica to other node */
           List<Integer> blockIds = dni.getBlockIds();
           for (int blockId : blockIds) {
+            /* get filename */
+            String filename = blockInfos.get(blockId).getFileName();
             /* get all datanodes that has this block */
             List<Integer> dataNodeIds = blockInfos.get(blockId).getDataNodeIds();
             String replica = null;
@@ -174,10 +169,10 @@ public class NameNodeImpl implements NameNode
               if (dataNodeInfos.get(dataNodeId).isAlive()) {
                 /* get replica */
                 try {
-                  dataNodeInfos.get(dataNodeId).getDataNode().getBlock(blockId);
+                  replica = dataNodeInfos.get(dataNodeId).getDataNode().getBlock(blockId);
+                  break;
                 } catch (RemoteException re) {
                   /* try next node */
-                  continue;
                 }
               }
             }
@@ -185,8 +180,9 @@ public class NameNodeImpl implements NameNode
             while (true) {
               try {
                 int dest = allocateBlock();
+                System.out.println(dest + "\n" + replica);
                 dataNodeInfos.get(dest).getDataNode().putBlock(blockId, replica);
-                commitBlockAllocation(dest, blockId);
+                commitBlockAllocation(dest, filename, blockId);
                 break;
               } catch (RemoteException re) {
                 /* try next node */

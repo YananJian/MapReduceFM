@@ -20,6 +20,7 @@ public class FileUploader
   {
     this.path = path;
     this.filename = filename;
+    this.nReplicas = nReplicas;
     this.registryHost = registryHost;
     this.registryPort = registryPort;
   }
@@ -32,12 +33,13 @@ public class FileUploader
     namenode.createFile(filename, nReplicas);
     /* upload content to datanodes */
     int blockSize = namenode.getBlockSize();
-    int blockId = namenode.getNextBlockId();
+    int blockId = namenode.getNextBlockId(filename);
     BufferedReader br = new BufferedReader(new FileReader(path));
     StringBuilder content = new StringBuilder();
-    String line = null;
-    while ((line = br.readLine()) != null) {
-      if (content.length() != 0 && content.length() + line.length() > blockSize) {
+    String line = "";
+    while (line != null) {
+      line = br.readLine();
+      if (line == null || (content.length() != 0 && content.length() + line.length() > blockSize)) {
         /* buffer full, put block to datanodes */
         for (int i = 0; i < nReplicas; i++) {
           while (true) {
@@ -47,18 +49,21 @@ public class FileUploader
               datanode.putBlock(blockId, content.toString());
             } catch (RemoteException e) {
               /* datanode dead */
+              e.printStackTrace();
               continue;
             }
-            namenode.commitBlockAllocation(dataNodeId, blockId);
+            namenode.commitBlockAllocation(dataNodeId, filename, blockId);
             break;
           }
         }
         /* clear the buffer */
         content.setLength(0);
         /* get new blockId */
-        blockId = namenode.getNextBlockId();
+        if (line != null)
+          blockId = namenode.getNextBlockId(filename);
       }
       content.append(line);
+      content.append("\n");
     }
     br.close();
   }

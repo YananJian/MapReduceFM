@@ -68,9 +68,6 @@ public class DataNodeImpl implements DataNode
     File folder = new File(dir);
     if (!folder.exists())
       folder.mkdirs();
-    List<Integer> blocks = new LinkedList<Integer>();
-    for (File file : folder.listFiles())
-      blocks.add(Integer.parseInt(file.getName()));
     Registry registry = null;
     DataNode stub = null;
     try {
@@ -104,7 +101,7 @@ public class DataNodeImpl implements DataNode
           System.out.println("Oops");
           System.out.println(registryHost + registryPort);
         }
-        namenode.register(id, this, blocks);
+        namenode.register(id, this);
         System.out.println("Registered");
         break;
       } catch (Exception e) {
