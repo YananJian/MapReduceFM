@@ -25,8 +25,8 @@ public class TestComputeNode {
 			FileInputStream fs = new FileInputStream(fpath);
 			BufferedReader br = new BufferedReader(new InputStreamReader(fs));
 			String line = null;
-			while ((line = br.readLine())!=null)
-				mapper.map(line, "");
+			//while ((line = br.readLine())!=null)
+			//	mapper.map(line, "");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

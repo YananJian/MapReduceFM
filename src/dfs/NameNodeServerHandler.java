@@ -28,13 +28,13 @@ public class NameNodeServerHandler implements Runnable
       else if (msg instanceof AllocateBlockRequest) {
         AllocateBlockRequest request = (AllocateBlockRequest) msg;
         ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-        oos.writeObject(new AllocateBlockResponse(nameNode.allocateBlock(request.getFileName())));
+        //oos.writeObject(new AllocateBlockResponse(nameNode.allocateBlock(request.getFileName())));
         oos.close();
       }
       else if (msg instanceof GetDataNodeInfoRequest) {
         GetDataNodeInfoRequest request = (GetDataNodeInfoRequest) msg;
         ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-        oos.writeObject(new GetDataNodeInfoResponse(nameNode.getDataNodeInfo(request.getDataNodeId())));
+        //oos.writeObject(new GetDataNodeInfoResponse(nameNode.getDataNodeInfo(request.getDataNodeId())));
         oos.close();
       }
       socket.close();

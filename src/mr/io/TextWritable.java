@@ -1,6 +1,6 @@
 package mr.io;
 
-public class TextWritable {
+public class TextWritable implements java.io.Serializable, Writable{
 
 	private String val = null;
 
@@ -8,8 +8,10 @@ public class TextWritable {
 		return val;
 	}
 
-	public void setVal(String val) {
-		this.val = val;
+	@Override
+	public void setVal(Object val) {
+		// TODO Auto-generated method stub
+		this.val = (String) val;
 	}
 	
 }

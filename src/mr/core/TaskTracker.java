@@ -1,17 +1,13 @@
 package mr.core;
 
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
 import mr.Mapper;
 
-public class TaskTracker {
+public interface TaskTracker extends Remote, java.io.Serializable {
 
-	public void start_map(String job_id, Mapper mapper)
-	{
-		
-	}
+	public void start_map(String job_id, String mapper_id, Class<? extends Mapper> class1) throws RemoteException;
 	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
 
 }
