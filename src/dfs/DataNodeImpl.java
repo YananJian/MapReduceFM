@@ -59,6 +59,9 @@ public class DataNodeImpl implements DataNode
     }
   }
 
+  public String getDir() throws RemoteException
+    { return dir; }
+
   public void heartBeat() throws RemoteException
     {}
 
