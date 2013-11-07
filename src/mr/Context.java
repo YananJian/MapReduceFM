@@ -13,14 +13,8 @@ public class Context {
 	BufferedWriter bw = null;
 	public Context(String job_id, String task_id)
 	{
-		String path = job_id+"@"+task_id;
-		try {
-			bw = new BufferedWriter(new FileWriter(path));
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		this.job_id = job_id;
+		this.task_id = task_id;
 	}
 	
 	/*public void set_JobID(String id)
@@ -46,20 +40,14 @@ public class Context {
 	public void write(Writable key, Writable value)
 	{
 		try {
-			bw.write(key.getVal() + "\t" + value.getVal());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	public void close()
-	{
-		try {
+			String path = job_id+"@"+task_id;
+			BufferedWriter bw = new BufferedWriter(new FileWriter(path, true));			
+			bw.write(key.getVal() + "\t" + value.getVal()+"\n");
 			bw.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
 }

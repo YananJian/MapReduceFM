@@ -37,7 +37,7 @@ public class Job implements java.io.Serializable{
 		try {
 			registry = LocateRegistry.getRegistry(Config.MASTER_IP, Config.MASTER_PORT);
 			jobTracker = (JobTracker) registry.lookup("JobTracker");
-			Long uuid = UUID.randomUUID().getMostSignificantBits();
+			Long uuid = Math.abs(UUID.randomUUID().getMostSignificantBits());
 			job_id = String.valueOf(uuid);
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
@@ -83,8 +83,10 @@ public class Job implements java.io.Serializable{
 	
 	private void registerJob()
 	{
-		Long uuid = UUID.randomUUID().getMostSignificantBits();
-		String job_id = String.valueOf(uuid);
+		double d = System.currentTimeMillis();  
+        d += System.nanoTime() ;         
+		
+		String job_id = String.valueOf((int)d);
 		Msg msg = new Msg();
 		msg.setJob_id(job_id);
 		msg.setMsg_tp(MSG_TP.SET_JOB_STATUS);

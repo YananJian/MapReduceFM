@@ -15,9 +15,7 @@ public class Test {
 			// TODO Auto-generated method stub
 			System.out.println("Mapping, Key:"+key.getVal()+"\tValue:"+val.getVal());
 			context.write(key, val);
-			context.close();
-		}
-		
+		}		
 	}
 	public static void main(String args[])
 	{

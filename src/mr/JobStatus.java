@@ -11,6 +11,8 @@ public class JobStatus {
 	Hashtable<String, Float> reducer_Progress = new Hashtable<String, Float>();
 	Hashtable<String, Constants.JOB_STATUS> mapper_Status = new Hashtable
 																<String, Constants.JOB_STATUS>();
+    Hashtable<String, Constants.JOB_STATUS> reducer_Status = new Hashtable
+																<String, Constants.JOB_STATUS>();															
 	public void set_mapper_progress(String mapper_id, Float progress)
 	{
 		this.mapper_Progress.put(mapper_id, progress);
@@ -31,8 +33,16 @@ public class JobStatus {
 	{
 		this.mapper_Status.put(mapper_id, status);
 	}
+	public void set_reducer_status(String reducer_id, Constants.JOB_STATUS status)
+	{
+		this.reducer_Status.put(reducer_id, status);
+	}
 	public Constants.JOB_STATUS get_mapper_status(String mapper_id)
 	{
 		return this.mapper_Status.get(mapper_id);
+	}
+	public Constants.JOB_STATUS get_reducer_status(String reducer_id)
+	{
+		return this.reducer_Status.get(reducer_id);
 	}
 }

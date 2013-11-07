@@ -8,4 +8,6 @@ public class Constants {
 	public enum JOB_STATUS{
 		STARTING, STARTED, TERMINATED
 	}
+	
+	public enum TASK_TP{MAPPER, REDUCER}
 }

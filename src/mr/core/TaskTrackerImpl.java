@@ -5,6 +5,10 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 
 import conf.Config;
@@ -21,12 +25,14 @@ public class TaskTrackerImpl implements TaskTracker{
 	JobTracker jobTracker = null;
 	int id = 0;
 	Registry registry = null;
-	public TaskTrackerImpl(int id)
+	String read_dir = null;
+	public TaskTrackerImpl(int id, String read_dir)
 	{
 		this.id = id;		
 		try {
 			registry = LocateRegistry.getRegistry(registryHost, registryPort);
 			this.jobTracker = (JobTracker) registry.lookup("JobTracker");
+			this.read_dir = read_dir;
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -50,8 +56,10 @@ public class TaskTrackerImpl implements TaskTracker{
 	        
 	      }
 	}
+	
+	
 	@Override
-	public void start_map(String job_id, String mapper_id, Class<? extends Mapper> mapper) {
+	public void start_map(String job_id, String mapper_id, String block_id, Class<? extends Mapper> mapper) {
 		// TODO Auto-generated method stub
 		//mapper.map(key, val, context);
 		try {
@@ -62,19 +70,34 @@ public class TaskTrackerImpl implements TaskTracker{
 			Context context = new Context(job_id, mapper_id);
 			
 			System.out.println("Executing task, job id:"+job_id+", mapper_id:"+mapper_id);
+			
 			/* HARD CODING TEXTWRITABLE AS TYPE....*/
 			TextWritable k1 = new TextWritable(); 
 			TextWritable v1 = new TextWritable();
-			String k1_val = "mapping, key";
-			String v1_val = "mapping, val";
-			k1.setVal(k1_val);
-			v1.setVal(v1_val);
+			/* read from block */
+			BufferedReader br = new BufferedReader(new FileReader(read_dir +"/"+block_id));
+			String line = "";
+			while ((line = br.readLine()) != null)
+			{
+				String k1_val = line;
+				String v1_val = line;
+				k1.setVal(k1_val);
+				v1.setVal(v1_val);
+				
+				mapper_cls.map(k1, v1, context);				
+			}
 			
-			mapper_cls.map(k1, v1, context);
+			
 		} catch (InstantiationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -87,7 +110,8 @@ public class TaskTrackerImpl implements TaskTracker{
 		
 		// TaskTracker ID should be the same with the id of the DataNode
 		String taskNodeID = args[0];
-		TaskTrackerImpl tt = new TaskTrackerImpl(Integer.parseInt(taskNodeID));
+		String dir = args[1];
+		TaskTrackerImpl tt = new TaskTrackerImpl(Integer.parseInt(taskNodeID), dir);
 		tt.init();
 	}
 }
