@@ -13,11 +13,13 @@ import java.util.Set;
 
 import conf.Config;
 import mr.Job;
+import mr.common.Msg;
 import dfs.DataNode;
 import dfs.NameNode;
 
 public interface JobTracker extends Remote, java.io.Serializable{
-	public void init() throws RemoteException;;
-	public void schedule(Job job) throws RemoteException;;
-	
+	public void init() throws RemoteException;
+	public void schedule(Job job) throws RemoteException;
+	//public void schedule_reducer(Job job) throws RemoteException;
+	public void heartbeat(Msg msg) throws RemoteException;
 }

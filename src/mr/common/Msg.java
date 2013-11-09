@@ -2,15 +2,21 @@ package mr.common;
 
 import mr.common.Constants.JOB_STATUS;
 import mr.common.Constants.MSG_TP;
+import mr.common.Constants.TASK_STATUS;
+import mr.common.Constants.TASK_TP;
 
 
 public class Msg implements java.io.Serializable{
 	
 	private MSG_TP msg_tp = null;
+	private TASK_TP task_tp = null;
 	private Object content = null;
-	private String job_id = null; // MAC + Process_ID
+	private String job_id = null; 
+	private String task_id = null;
 	private JOB_STATUS job_stat = null;
+	private TASK_STATUS task_stat = null;
 	private String blk_fpath = null;
+	//private HashMap<String, Integer> 
 	
 	public MSG_TP getMsg_tp() {
 		return msg_tp;
@@ -51,6 +57,29 @@ public class Msg implements java.io.Serializable{
 	public void setBlk_fpath(String blk_fpath) {
 		this.blk_fpath = blk_fpath;
 	}
-	
+
+	public String getTask_id() {
+		return task_id;
+	}
+
+	public void setTask_id(String task_id) {
+		this.task_id = task_id;
+	}
+
+	public TASK_TP getTask_tp() {
+		return task_tp;
+	}
+
+	public void setTask_tp(TASK_TP task_tp) {
+		this.task_tp = task_tp;
+	}
+
+	public TASK_STATUS getTask_stat() {
+		return task_stat;
+	}
+
+	public void setTask_stat(TASK_STATUS task_stat) {
+		this.task_stat = task_stat;
+	}
 	
 }

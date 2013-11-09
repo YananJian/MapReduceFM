@@ -15,10 +15,27 @@ import conf.Config;
 import dfs.NameNode;
 import mr.Context;
 import mr.Mapper;
+import mr.Task;
+import mr.common.Constants.MSG_TP;
+import mr.common.Constants.TASK_STATUS;
+import mr.common.Constants.TASK_TP;
+import mr.common.Msg;
 import mr.io.TextWritable;
 import mr.io.Writable;
 
-public class TaskTrackerImpl implements TaskTracker{
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+public class TaskTrackerImpl implements TaskTracker, Callable{
 	
 	String registryHost = Config.MASTER_IP;
 	int registryPort = Config.MASTER_PORT;
@@ -26,6 +43,10 @@ public class TaskTrackerImpl implements TaskTracker{
 	int id = 0;
 	Registry registry = null;
 	String read_dir = null;
+	ExecutorService exec = null;
+	int reducer_ct = 0;
+	//Queue<Msg> heartbeats = new LinkedList<Msg>();
+	LinkedBlockingQueue<Msg> heartbeats = new LinkedBlockingQueue<Msg>();
 	public TaskTrackerImpl(int id, String read_dir)
 	{
 		this.id = id;		
@@ -33,6 +54,8 @@ public class TaskTrackerImpl implements TaskTracker{
 			registry = LocateRegistry.getRegistry(registryHost, registryPort);
 			this.jobTracker = (JobTracker) registry.lookup("JobTracker");
 			this.read_dir = read_dir;
+			exec = Executors.newCachedThreadPool();
+			exec.submit(this);
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -40,6 +63,12 @@ public class TaskTrackerImpl implements TaskTracker{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+	}
+	
+	
+	public void update_task_status()
+	{
 		
 	}
 	
@@ -62,47 +91,39 @@ public class TaskTrackerImpl implements TaskTracker{
 	public void start_map(String job_id, String mapper_id, String block_id, Class<? extends Mapper> mapper) {
 		// TODO Auto-generated method stub
 		//mapper.map(key, val, context);
+		Task task = new Task(job_id, mapper_id, block_id, reducer_ct);
+		task.set_mapper_cls(mapper);
+		task.set_read_dir(read_dir);
+		task.set_mapper_cls(mapper);
+		task.set_machineID(String.valueOf(id));
+		Future f1 = exec.submit(task);
 		try {
-			System.out.println("------------Starting Mapper task in TaskTracker");
-					
-			Mapper<Object, Object, Object, Object> mapper_cls = mapper.newInstance();
-			
-			Context context = new Context(job_id, mapper_id);
-			
-			System.out.println("Executing task, job id:"+job_id+", mapper_id:"+mapper_id);
-			
-			/* HARD CODING TEXTWRITABLE AS TYPE....*/
-			TextWritable k1 = new TextWritable(); 
-			TextWritable v1 = new TextWritable();
-			/* read from block */
-			BufferedReader br = new BufferedReader(new FileReader(read_dir +"/"+block_id));
-			String line = "";
-			while ((line = br.readLine()) != null)
-			{
-				String k1_val = line;
-				String v1_val = line;
-				k1.setVal(k1_val);
-				v1.setVal(v1_val);
-				
-				mapper_cls.map(k1, v1, context);				
-			}
-			
-			
-		} catch (InstantiationException e) {
+			HashMap<String, Integer> idSize = (HashMap<String, Integer>) f1.get();
+			System.out.println("Result from sub thread");
+			System.out.println(idSize.toString());
+			/*
+			 * After executing task, wrap the return value into Heartbeat Msg.
+			 * Send Heartbeat to JobTracker.
+			 * Per Msg per Task.
+			 * 
+			 * */
+			Msg msg = new Msg();
+			msg.setJob_id(job_id);
+			msg.setTask_id(mapper_id);
+			msg.setTask_tp(TASK_TP.MAPPER);
+			msg.setTask_stat(TASK_STATUS.FINISHED);			
+			msg.setContent(idSize);
+			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
+			this.heartbeats.offer(msg);
+			//this.heartbeats.add(msg);
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (ExecutionException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		System.out.println("Starting Mapper");
 		
 	}
 
@@ -113,5 +134,34 @@ public class TaskTrackerImpl implements TaskTracker{
 		String dir = args[1];
 		TaskTrackerImpl tt = new TaskTrackerImpl(Integer.parseInt(taskNodeID), dir);
 		tt.init();
+	}
+
+	@Override
+	public void set_reducer_ct(int ct) {
+		// TODO Auto-generated method stub
+		this.reducer_ct = ct;
+	}
+
+
+
+	@Override
+	public Object call() throws Exception {
+		// TODO Auto-generated method stub
+		while(true)
+		{
+			Msg msg = this.heartbeats.poll();
+			
+			if (msg != null)
+			{
+				jobTracker.heartbeat(msg);
+				
+			}	
+			else
+			{
+				TimeUnit.SECONDS.sleep(1);				
+			}
+			
+		}
+		
 	}
 }
