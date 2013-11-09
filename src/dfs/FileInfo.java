@@ -54,6 +54,16 @@ public class FileInfo
   public void addBlockId(int blockId)
     { blockIds.add(blockId); }
 
+  public String toFsImage()
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append(filename + " ");
+    sb.append(nReplicas + " ");
+    for (int blockId : blockIds)
+      sb.append(blockId + " ");
+    return sb.toString();
+  }
+
   @Override
   public String toString()
     { return "filename: " + filename + "\t#replicas: " + nReplicas + "\tblock id: " + blockIds.toString(); }

@@ -9,4 +9,5 @@ public interface DataNode extends Remote
   public String getBlock(int blockId) throws RemoteException;
   public String getDir() throws RemoteException;
   public void heartBeat() throws RemoteException;
+  public void terminate() throws RemoteException;
 }

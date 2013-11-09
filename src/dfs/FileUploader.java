@@ -30,7 +30,8 @@ public class FileUploader
     /* create metadata for namenode */
     Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
     NameNode namenode = (NameNode) registry.lookup("NameNode");
-    nReplicas = namenode.createFile(filename, nReplicas);
+    if ((nReplicas = namenode.createFile(filename, nReplicas)) == 0)
+      throw new IOException("File already exists");
     /* upload content to datanodes */
     int blockSize = namenode.getBlockSize();
     int blockId = namenode.getNextBlockId(filename);

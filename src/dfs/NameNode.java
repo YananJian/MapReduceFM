@@ -15,4 +15,5 @@ public interface NameNode extends Remote
   public void commitBlockAllocation(int dataNodeId, String filename, int blockId) throws RemoteException;
   public Map<Integer, List<Integer>> getAllBlocks(String filename) throws RemoteException;
   public String describeDFS() throws RemoteException;
+  public void terminate(String fsImageDir) throws RemoteException;
 }

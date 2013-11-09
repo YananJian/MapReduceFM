@@ -49,6 +49,16 @@ public class BlockInfo
   public void addDataNode(int dataNodeId)
     { dataNodeIds.add(dataNodeId); }
 
+  public String toFsImage()
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append(blockId + " ");
+    sb.append(filename + " ");
+    for (Integer dataNodeId : dataNodeIds)
+      sb.append(dataNodeId + " ");
+    return sb.toString();
+  }
+
   @Override
   public String toString()
     { return "block id: " + blockId + "\tfilename: " + filename + "\tdatanode id: " + dataNodeIds.toString(); }

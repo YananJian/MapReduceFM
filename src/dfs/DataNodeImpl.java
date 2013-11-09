@@ -65,12 +65,16 @@ public class DataNodeImpl implements DataNode
   public void heartBeat() throws RemoteException
     {}
 
+  public void terminate() throws RemoteException
+    { System.exit(1); }
+
   public void bootstrap()
   {
-    /* get all blocks */
+    /* init dir */
     File folder = new File(dir);
     if (!folder.exists())
       folder.mkdirs();
+    /* rebind to registry */
     Registry registry = null;
     DataNode stub = null;
     try {
@@ -79,7 +83,6 @@ public class DataNodeImpl implements DataNode
       e.printStackTrace();
       System.exit(1);
     }
-    /* rebind to registry */
     while (true) {
       System.out.println("Trying to register self");
       try {
@@ -100,10 +103,6 @@ public class DataNodeImpl implements DataNode
     while (true) {
       try {
         NameNode namenode = (NameNode) registry.lookup("NameNode");
-        if (namenode == null) {
-          System.out.println("Oops");
-          System.out.println(registryHost + registryPort);
-        }
         namenode.register(id, this);
         System.out.println("Registered");
         break;
