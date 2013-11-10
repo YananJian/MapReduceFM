@@ -18,6 +18,7 @@ import java.util.Set;
 
 import mr.Job;
 import mr.JobStatus;
+import mr.Reducer;
 import mr.common.Constants.*;
 import mr.common.Msg;
 import conf.Config;
@@ -50,6 +51,7 @@ public class JobTrackerImpl implements JobTracker{
 	HashMap<String, HashMap<String, HashMap<String, Integer>>> job_mc_hash_size= new HashMap<String, HashMap<String, HashMap<String, Integer>>>();
 	//Hashtable<String, List<String>> job_task_mapping = new Hashtable<String, List<String>>();
 	HashMap<String, String> jobID_outputdir = new HashMap<String, String>();
+	HashMap<String, Job> jobID_Job = new HashMap<String, Job>();
 	Registry registry = null;
 	
 	public JobTrackerImpl()
@@ -146,8 +148,10 @@ public class JobTrackerImpl implements JobTracker{
 	{
 		try {
 			Map<Integer, List<Integer>> mappings = this.namenode.getAllBlocks(job.get_fileName());
+			jobID_Job.put(job.get_jobId(), job);
 			Set<?> set = mappings.entrySet();
-			jobID_outputdir.put(job.get_jobId(), job.get_fileOutputPath());
+			if (job.get_fileOutputPath() != null)
+				jobID_outputdir.put(job.get_jobId(), job.get_fileOutputPath());
 			System.out.println("Scheduling Job "+job.get_jobId());
 			JobStatus jstatus = new JobStatus();
 			this.job_status.put(job.get_jobId(), jstatus);
@@ -164,7 +168,7 @@ public class JobTrackerImpl implements JobTracker{
 			   
 			   /* set mapper task */
 			   JobStatus _jstatus = this.job_status.get(job.get_jobId());
-			   String mapper_id = job.get_jobId() + "_" + String.valueOf(key);
+			   String mapper_id = job.get_jobId() + "_m_" + String.valueOf(key);
 			   _jstatus.set_mapper_status(mapper_id, JOB_STATUS.STARTING);
 			   this.job_status.put(job.get_jobId(), _jstatus); 	
 			   
@@ -275,7 +279,7 @@ public class JobTrackerImpl implements JobTracker{
 		//TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+String.valueOf(value.get(0)));
 	}
 
-	public void start_reducer(HashMap<String, List<String>> mcID_hashIDs)
+	public void start_reducer(String job_id, String write_path, HashMap<String, List<String>> mcID_hashIDs)
 	{
 		Iterator iter = mcID_hashIDs.entrySet().iterator();
 		while(iter.hasNext())
@@ -285,7 +289,11 @@ public class JobTrackerImpl implements JobTracker{
 			List<String> hashIDs = (List<String>)entry.getValue();
 			try {
 				TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+mcID);
-			
+				String reducer_id = job_id + "_r_" + String.valueOf(mcID);
+				Job job = this.jobID_Job.get(job_id);
+				Class<? extends Reducer> reducer = job.get_reducer();
+				tt.start_reducer(job_id, reducer_id, write_path, reducer);
+				System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
 			} catch (AccessException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -354,7 +362,7 @@ public class JobTrackerImpl implements JobTracker{
 					
 					shuffle(jobID, mcID_hashIDs);
 					
-					start_reducer(mcID_hashIDs);
+					start_reducer(jobID, this.jobID_outputdir.get(jobID), mcID_hashIDs);
 				}
 				
 			}

@@ -14,27 +14,36 @@ public class Test {
 		public void map(TextWritable key, TextWritable val, Context context) {
 			// TODO Auto-generated method stub
 			System.out.println("Mapping, Key:"+key.getVal()+"\tValue:"+val.getVal());
-			context.write(key, val);
+			TextWritable _val = new TextWritable();
+			_val.setVal("1");
+			context.write(key, _val);
 		}		
 	}
 	public static class TestReducer extends Reducer<TextWritable, TextWritable, TextWritable, IntWritable>
 	{
-		public void reduce(TextWritable key, Iterable<IntWritable> values, Context context)
+		@Override
+		public void reduce(TextWritable key, Iterable<Writable> values, Context context)
 		{
 			int sum = 0;
-			for (IntWritable val:values)
-				sum += val.getVal();
-			System.out.println(key + String.valueOf(sum));
+			System.out.println("reduced KEY:"+key.getVal());
+			for (Writable val:values)
+			{
+				TextWritable _val = (TextWritable) val;
+				System.out.println("reduced VAL:"+_val.getVal());
+				sum += Integer.parseInt(_val.getVal());
+			}
+			System.out.println("-----result: "+key.getVal() + "\t"+String.valueOf(sum));
 		}
 	}
 	public static void main(String args[])
 	{
 		//Job job = new Job();
-		String path = "/Users/yanan/javapro/workspace/testfiles/t1";
-		String tmp[] = path.split("/");
+		String input_path = "/Users/yanan/javapro/workspace/testfiles/t1";
+		String output_path = "/Users/yanan/javapro/workspace/testfiles/t2";
+		String tmp[] = input_path.split("/");
 		Job job = new Job();
-		job.set_fileInputPath(path);
-		job.set_fileOutputPath("s3://test");
+		job.set_fileInputPath(input_path);
+		job.set_fileOutputPath(output_path);
 		job.set_mapper(TestMapper.class);
 		job.set_reducer(TestReducer.class);
 		try {

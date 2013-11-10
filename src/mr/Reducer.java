@@ -18,13 +18,6 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
     private String dirname;
     private HashMap<String, Integer> skipCounts;
     private LinkedList<Record> records;
-
-    /*public Reducer(String dirname)
-    {
-        this.dirname = dirname;
-        skipCounts = new HashMap<String, Integer>();
-        records = new LinkedList<Record>();
-    }*/
     
     public void init(String dirname)
     {
@@ -33,24 +26,30 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         records = new LinkedList<Record>();
     }
     
-    public void reduce(K2 k2, Iterable<V2> v2, Context context)
+    /*public void reduce(K2 k2, Iterable<Writable> values, Context context)
     {
+    	System.out.println("Parent Reducer!");
     	
-    	
-    }
+    }*/
+    public void reduce(TextWritable key, Iterable<Writable> values,
+			Context context) {
+		// TODO Auto-generated method stub
+		
+	}
     public void bootstrap() {
         /* insert one record/file into recordQueue */
         File dir = new File(dirname);
         File[] files = dir.listFiles();
         for (File file : files) {
             String filename = file.getName();
+            System.out.println("-----Filename:"+filename);
             skipCounts.put(filename, 1);
             try {
                 BufferedReader br = new BufferedReader(new FileReader(file));
                 String line = br.readLine();
                 if (line != null) {
                     /* skip empty file */
-                    String[] words = line.split(" ");
+                    String[] words = line.split("\t");
                     /* HARD CODE TYPE TO BE TEXTWRITABLE */
                     TextWritable key = new TextWritable();
                     TextWritable value = new TextWritable();
@@ -89,7 +88,7 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                 br.readLine();
             String line = br.readLine();
             if (line != null) {
-                String[] words = line.split(" ");
+                String[] words = line.split("\t");
                 /* HARD CODE TYPE TO BE TEXTWRITABLE */
                 TextWritable k = new TextWritable();
                 TextWritable v = new TextWritable();
@@ -105,4 +104,8 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         }
         return result;
     }
+
+	
+
+	
 }

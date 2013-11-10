@@ -70,6 +70,11 @@ public class Job implements java.io.Serializable{
 		this.reducer = class1;
 	}
 	
+	public Class<? extends Reducer> get_reducer()
+	{
+		return this.reducer;
+	}
+	
 	public void set_fileInputPath(String path)
 	{
 		this.fileInputPath = path;

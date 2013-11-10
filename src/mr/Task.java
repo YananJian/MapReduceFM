@@ -6,11 +6,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.*;
 
 import mr.common.Constants.TASK_TP;
 import mr.io.IntWritable;
 import mr.io.TextWritable;
+import mr.io.Writable;
 
 public class Task implements Callable {
 	Class<? extends Mapper> mapper = null;
@@ -94,22 +96,32 @@ public class Task implements Callable {
 				}
 				return context.get_idSize();
 			}
-			else
+			else if (type == TASK_TP.REDUCER)
 			{
-				System.out.println("------------Starting Reducer task in TaskTracker");
+				System.out.println("------------Starting Reducer task in Task");
 				Reducer<Object, Object, Object, Object> reducer_cls = reducer.newInstance();
 				//String output_tmpdir = "tmp/"+job_id+'/'+machine_id+'/';
 				Context context = new Context(job_id, task_id, reducer_ct, output_dir);
 				System.out.println("Executing task, job id:" + job_id
 					+ ", reducer_id:" + task_id);
 				String input_dir = "tmp/"+job_id+'/'+machine_id+'/';
-				reducer_cls.init(output_dir);
+				System.out.println("Input to reducer, dir:"+input_dir);
+				reducer_cls.init(input_dir);
 				reducer_cls.bootstrap();
-				/* HARD CODING TEXTWRITABLE AS TYPE.... */
-				TextWritable k2 = new TextWritable();
-				IntWritable v2 = new IntWritable();
+				
 				//reducer_cls.reduce(k2, v2, context);
-
+				Record record = null;
+				while ((record = reducer_cls.getNext()) != null) {
+					  TextWritable key = (TextWritable) record.getKey();
+				      System.out.println("After bootrap, key:"+key.getVal());
+				      Iterable<Writable> values = (Iterable<Writable>) record.getValues();
+				      reducer_cls.reduce(key, values, context);
+				      /*Iterator<Writable> itor = values.iterator();
+				      while (itor.hasNext()) {
+				        Writable w = (Writable) itor.next();
+				        System.out.print(" " + w.getVal());
+				      }*/
+				}
 			}
 		} catch (InstantiationException e) {
 			// TODO Auto-generated catch block

@@ -138,10 +138,11 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			
 		    String line = null;
 		    while ((line = br.readLine()) != null)
-		    	content.append(line);
+		    	content.append(line+'\n');
 		    br.close();
 		    File delf = new File(path + '/' + name);
 			delf.delete();
+			content.deleteCharAt(content.length()-1);
 		    return content.toString();
 			
 		} catch (FileNotFoundException e) {
@@ -222,7 +223,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_outputdir(write_path);
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
-		
+		System.out.println("Starting Reducer in TaskTracker, output_dir:"+write_path);
 	}
 	
 	public static void main(String[] args) {
