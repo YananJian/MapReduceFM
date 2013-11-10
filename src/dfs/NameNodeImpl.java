@@ -180,11 +180,11 @@ public class NameNodeImpl implements NameNode
     }
   }
 
-  public void bootstrap(int nDataNodes, String fsImageDir)
+  public void bootstrap(int nDataNodes, String fsImageDir, int port)
   {
     /* register itself to registry */
     try {
-      NameNode stub = (NameNode) UnicastRemoteObject.exportObject(this, 0);
+      NameNode stub = (NameNode) UnicastRemoteObject.exportObject(this, port);
       registry.rebind("NameNode", stub);
     } catch (RemoteException e) {
       e.printStackTrace();
@@ -322,12 +322,13 @@ public class NameNodeImpl implements NameNode
     int nReplicasDefault = Integer.parseInt(args[0]);
     int healthCheckInterval = Integer.parseInt(args[1]);
     int blockSize = Integer.parseInt(args[2]);
-    int port = Integer.parseInt(args[3]);
+    int registryPort = Integer.parseInt(args[3]);
     int nDataNodes = Integer.parseInt(args[4]);
     String fsImageDir = args[5];
-    NameNodeImpl namenode = new NameNodeImpl(nReplicasDefault, healthCheckInterval, blockSize, port);
+    int port = Integer.parseInt(args[6]);
+    NameNodeImpl namenode = new NameNodeImpl(nReplicasDefault, healthCheckInterval, blockSize, registryPort);
     /* bootstrap */
-    namenode.bootstrap(nDataNodes, fsImageDir);
+    namenode.bootstrap(nDataNodes, fsImageDir, port);
     /* register to registry and start health check */
     namenode.healthCheck();
   }
