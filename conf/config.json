@@ -1,0 +1,16 @@
+{
+  "block size": "64",
+  "replication": "3",
+  "healthcheck interval": "5",
+  "fsImage dir": "./fsImage",
+  "registry": {
+    "host": "localhost",
+    "port": "15640"
+  },
+  "namenode port": "15641",
+  "datanode": [
+    { "port": "15462", "dir": "./0/" },
+    { "port": "15463", "dir": "./1/" },
+    { "port": "15464", "dir": "./2/" }
+  ]
+}
