@@ -6,8 +6,11 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 
@@ -86,6 +89,59 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	      }
 	}
 	
+	public void writebr(String path, byte[]content)
+	{
+		try {
+			FileOutputStream file_out=new FileOutputStream(path,true);
+			file_out.write(content);
+			file_out.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		
+	}
+	
+	public String readstr(String path)
+	{
+		StringBuilder content = new StringBuilder();
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			
+		    String line = null;
+		    while ((line = br.readLine()) != null)
+		    	content.append(line);
+		    br.close();
+		    return content.toString();
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return content.toString();
+	}
+	
+	public void writestr(String path, String content)
+	{
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(path, true));
+			//FileOutputStream file_out=new FileOutputStream(path,true);
+			out.write(content);		
+			out.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+	}
 	
 	@Override
 	public void start_map(String job_id, String mapper_id, String block_id, Class<? extends Mapper> mapper) {

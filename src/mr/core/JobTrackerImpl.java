@@ -1,5 +1,6 @@
 package mr.core;
 
+import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -7,6 +8,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -27,13 +29,15 @@ public class JobTrackerImpl implements JobTracker{
 	NameNode namenode = null;
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
 	/*
+	 * mapper_machine: pair of job, mapperID and machineID
 	 * preset_mapper_ct: pair of mapper_id and count of mappers the scheduler allocated.
 	 * preset_mapper_job_task: mapping of preset job_id and list of mapper_id
 	 * finished_mapper_ct: pair of mapper_id and count of mappers that have finished.
 	 * finished_mapper_job_task: mapping of finished job_id and list of mapper_id
 	 * id_ssum: mapping of job_id, hashedID(Based on num of reducers) and the sum of size of blocks 
-	 * partition_res: mapping of mapper_id and hashedID
+	 * 
 	 * */
+	Hashtable<String, Hashtable<String, String>> mapper_machine = new Hashtable<String, Hashtable<String, String>>();
 	Hashtable<String, Integer> preset_mapper_ct = new Hashtable<String, Integer>();
 	Hashtable<String, List<String>> preset_mapper_job_task = new Hashtable<String, List<String>>();
 	
@@ -41,7 +45,7 @@ public class JobTrackerImpl implements JobTracker{
 	Hashtable<String, List<String>> finished_mapper_job_task = new Hashtable<String, List<String>>();
 	
 	HashMap<String, HashMap<String, Integer>> id_ssum = new HashMap<String, HashMap<String, Integer>>();
-	HashMap<String, String> partition_res = new HashMap<String, String>();
+	
 	//Hashtable<String, List<String>> job_task_mapping = new Hashtable<String, List<String>>();
 	Registry registry = null;
 	
@@ -88,19 +92,21 @@ public class JobTrackerImpl implements JobTracker{
 	 * C has the most resources for k1 and k2, 
 	 * Thus we choose to schedule 2 reducers on C.
 	 * */
-	public void preset_reducer(String jobID, String mapperID, HashMap<String, Integer> id_size)
+	public HashMap<String, String> preset_reducer(String jobID, String mapperID, HashMap<String, Integer> id_size)
 	{
-		/*
+		/* partition_res: mapping of machineID and hashedID */
+		HashMap<String, String> partition_res = new HashMap<String, String>();
+		
 		Iterator iter = id_size.entrySet().iterator(); 
 		while (iter.hasNext()) { 
 		    Map.Entry entry = (Map.Entry) iter.next(); 
 		    String key = (String) entry.getKey(); 
 		    Integer val = (Integer)entry.getValue();
-		   
-		} */
+		    partition_res.put(key, key);
+		} 
 		// Since I have to think more about how to optimize it, let's assume hashID = machineID
 		
-		//partition_res.put(mapperID, value)
+		return partition_res;
 		
 	}
 
@@ -140,6 +146,7 @@ public class JobTrackerImpl implements JobTracker{
 			JobStatus jstatus = new JobStatus();
 			this.job_status.put(job.get_jobId(), jstatus);
 			int ct = 0;
+			Hashtable<String, String> mc_mp = new Hashtable<String, String>();
 			for(Iterator<?> iter = set.iterator(); iter.hasNext();)
 			  {
 			   @SuppressWarnings("rawtypes")
@@ -167,6 +174,9 @@ public class JobTrackerImpl implements JobTracker{
 			    * JobTracker then coordinate which ID goes to which reducer (locality considered).
 			    * 
 			    * */
+			   
+			   mc_mp.put(mapper_id, String.valueOf(value.get(0)));
+			   mapper_machine.put(job.get_jobId(), mc_mp);
 			   tt.start_map(job.get_jobId(), mapper_id, String.valueOf(key), job.get_mapper());
 			   ct += 1;
 			   update_preset_mapper(job.get_jobId(), mapper_id, ct);
@@ -191,10 +201,64 @@ public class JobTrackerImpl implements JobTracker{
 		jt.init();
 	}
 	
-	public void shuffle(String jobID)
+	public Set get_mapper_machineIDs(String jobID)
+	{
+		Hashtable<String, String> mp_mc = mapper_machine.get(jobID);
+		Iterator iter = mp_mc.entrySet().iterator(); 
+		Set mcIDs = new HashSet();
+		while (iter.hasNext())
+		{
+			Map.Entry entry = (Map.Entry) iter.next(); 
+		    String key = (String) entry.getKey(); 
+		    String val = (String) entry.getValue(); 
+			mcIDs.add(val);
+		}
+		System.out.println("JobID:"+jobID+" has mcIDs:"+mcIDs.toString());
+		return mcIDs;
+		
+	}
+	
+	public void shuffle(String jobID, HashMap<String, String> mcID_hashID)
 	{
 		System.out.println("Shuffling ....");
+		Iterator iter = mcID_hashID.entrySet().iterator(); 
+		Set mcIDsets = get_mapper_machineIDs(jobID);
+		Iterator mc_iter = mcIDsets.iterator();
 		
+		
+		//System.out.println("Machine IDS:"+mcIDs.toString());
+		while (iter.hasNext()) { 
+		    Map.Entry entry = (Map.Entry) iter.next(); 
+		    String key = (String) entry.getKey(); 
+		    String val = (String) entry.getValue(); 
+		    try {
+				TaskTracker w_taskTracker = (TaskTracker) registry.lookup("TaskTracker_"+key);
+				String w_path = "tmp/" + jobID + '/' + key + '/';
+				
+				while(mc_iter.hasNext())
+				{
+					System.out.println("Machine ID:"+key);
+					String curr = mc_iter.next().toString();
+					if (curr.equals(key))
+						continue;
+					TaskTracker r_taskTracker = (TaskTracker) registry.lookup("TaskTracker_"+curr);
+					String content = r_taskTracker.readstr(w_path+'/'+val);
+					w_taskTracker.writestr(w_path+'/'+val+'_', content);
+					System.out.println("Writing to path:"+w_path+'/'+val+'_');
+				}
+		    } catch (AccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NotBoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} 
+		
+		//TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+String.valueOf(value.get(0)));
 	}
 
 	@Override
@@ -236,8 +300,9 @@ public class JobTrackerImpl implements JobTracker{
 					 * and then JobTracker.
 					 * 
 					 * */
-					preset_reducer(jobID, taskID, ret);
-					shuffle(jobID);
+					HashMap<String, String> mcID_hashID = preset_reducer(jobID, taskID, ret);
+					System.out.println("preset mapper return:"+mcID_hashID.toString());
+					shuffle(jobID, mcID_hashID);
 				}
 				
 			}
