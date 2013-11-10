@@ -19,6 +19,7 @@ import conf.Config;
 import dfs.NameNode;
 import mr.Context;
 import mr.Mapper;
+import mr.Reducer;
 import mr.Task;
 import mr.common.Constants.MSG_TP;
 import mr.common.Constants.TASK_STATUS;
@@ -173,7 +174,10 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	public void start_map(String job_id, String mapper_id, String block_id, Class<? extends Mapper> mapper) {
 		// TODO Auto-generated method stub
 		//mapper.map(key, val, context);
-		Task task = new Task(job_id, mapper_id, block_id, reducer_ct);
+		Task task = new Task(job_id, mapper_id);
+		task.set_taskTP(TASK_TP.MAPPER);
+		task.set_blockID(block_id);
+		task.set_reducerCT(reducer_ct);
 		task.set_mapper_cls(mapper);
 		task.set_read_dir(read_dir);
 		task.set_mapper_cls(mapper);
@@ -209,6 +213,18 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		
 	}
 
+	
+	public void start_reducer(String job_id, String reducer_id, String write_path, Class<? extends Reducer> reducer)
+	{
+		Task task = new Task(job_id, reducer_id);
+		task.set_taskTP(TASK_TP.REDUCER);
+		task.set_reducer_cls(reducer);
+		task.set_outputdir(write_path);
+		task.set_machineID(String.valueOf(id));
+		Future f1 = exec.submit(task);
+		
+	}
+	
 	public static void main(String[] args) {
 		
 		// TaskTracker ID should be the same with the id of the DataNode

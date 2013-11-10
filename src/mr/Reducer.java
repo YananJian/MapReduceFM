@@ -18,13 +18,25 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
     private HashMap<String, Integer> skipCounts;
     private LinkedList<Record> records;
 
-    public Reducer(String dirname)
+    /*public Reducer(String dirname)
+    {
+        this.dirname = dirname;
+        skipCounts = new HashMap<String, Integer>();
+        records = new LinkedList<Record>();
+    }*/
+    
+    public void init(String dirname)
     {
         this.dirname = dirname;
         skipCounts = new HashMap<String, Integer>();
         records = new LinkedList<Record>();
     }
-
+    
+    public void reduce(K2 k2, Iterable<V2> v2, Context context)
+    {
+    	
+    	
+    }
     public void bootstrap() {
         /* insert one record/file into recordQueue */
         File dir = new File(dirname);

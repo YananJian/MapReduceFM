@@ -22,6 +22,7 @@ public class Job implements java.io.Serializable{
 	
 	private static final long serialVersionUID = 1L;
 	Class<? extends Mapper> mapper = null;
+	Class<? extends Reducer> reducer = null;
 	String fileInputPath = null;
 	String fileOutputPath = null;
 	String fname = null;
@@ -64,6 +65,11 @@ public class Job implements java.io.Serializable{
 		return this.mapper;
 	}
 	
+	public void set_reducer(Class<? extends Reducer> class1)
+	{
+		this.reducer = class1;
+	}
+	
 	public void set_fileInputPath(String path)
 	{
 		this.fileInputPath = path;
@@ -74,6 +80,11 @@ public class Job implements java.io.Serializable{
 	public void set_fileOutputPath(String path)
 	{
 		this.fileOutputPath = path;
+	}
+	
+	public String get_fileOutputPath()
+	{
+		return this.fileOutputPath;
 	}
 	
 	public String get_fileName()

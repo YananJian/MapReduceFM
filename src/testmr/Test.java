@@ -17,6 +17,16 @@ public class Test {
 			context.write(key, val);
 		}		
 	}
+	public static class TestReducer extends Reducer<TextWritable, TextWritable, TextWritable, IntWritable>
+	{
+		public void reduce(TextWritable key, Iterable<IntWritable> values, Context context)
+		{
+			int sum = 0;
+			for (IntWritable val:values)
+				sum += val.getVal();
+			System.out.println(key + String.valueOf(sum));
+		}
+	}
 	public static void main(String args[])
 	{
 		//Job job = new Job();
@@ -26,6 +36,7 @@ public class Test {
 		job.set_fileInputPath(path);
 		job.set_fileOutputPath("s3://test");
 		job.set_mapper(TestMapper.class);
+		job.set_reducer(TestReducer.class);
 		try {
 			job.submit();
 		} catch (RemoteException e) {

@@ -49,6 +49,7 @@ public class JobTrackerImpl implements JobTracker{
 	//JobID, MachineID, partitionID, size
 	HashMap<String, HashMap<String, HashMap<String, Integer>>> job_mc_hash_size= new HashMap<String, HashMap<String, HashMap<String, Integer>>>();
 	//Hashtable<String, List<String>> job_task_mapping = new Hashtable<String, List<String>>();
+	HashMap<String, String> jobID_outputdir = new HashMap<String, String>();
 	Registry registry = null;
 	
 	public JobTrackerImpl()
@@ -146,6 +147,7 @@ public class JobTrackerImpl implements JobTracker{
 		try {
 			Map<Integer, List<Integer>> mappings = this.namenode.getAllBlocks(job.get_fileName());
 			Set<?> set = mappings.entrySet();
+			jobID_outputdir.put(job.get_jobId(), job.get_fileOutputPath());
 			System.out.println("Scheduling Job "+job.get_jobId());
 			JobStatus jstatus = new JobStatus();
 			this.job_status.put(job.get_jobId(), jstatus);
@@ -273,6 +275,31 @@ public class JobTrackerImpl implements JobTracker{
 		//TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+String.valueOf(value.get(0)));
 	}
 
+	public void start_reducer(HashMap<String, List<String>> mcID_hashIDs)
+	{
+		Iterator iter = mcID_hashIDs.entrySet().iterator();
+		while(iter.hasNext())
+		{
+			Map.Entry entry = (Map.Entry) iter.next();
+			String mcID = (String)entry.getKey();
+			List<String> hashIDs = (List<String>)entry.getValue();
+			try {
+				TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+mcID);
+			
+			} catch (AccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NotBoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	
+		}
+	}
+	
 	@Override
 	public void heartbeat(Msg msg) throws RemoteException {
 		// TODO Auto-generated method stub
@@ -326,6 +353,8 @@ public class JobTrackerImpl implements JobTracker{
 					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
 					
 					shuffle(jobID, mcID_hashIDs);
+					
+					start_reducer(mcID_hashIDs);
 				}
 				
 			}
