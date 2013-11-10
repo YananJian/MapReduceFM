@@ -58,11 +58,17 @@ public class FileDownloader
 
   public static void main(String[] args)
   {
-    String path = args[0];
-    String filename = args[1];
-    String registryHost = args[2];
-    int registryPort = Integer.parseInt(args[3]);
-    FileDownloader downloader = new FileDownloader(path, filename, registryHost, registryPort);
+    FileDownloader downloader = null;
+    try {
+      String path = args[0];
+      String filename = args[1];
+      String registryHost = args[2];
+      int registryPort = Integer.parseInt(args[3]);
+      downloader = new FileDownloader(path, filename, registryHost, registryPort);
+    } catch (Exception e) {
+      System.out.println("usage: <path> <filename> <registry host>");
+      System.exit(1);
+    }
     try {
       downloader.download();
     } catch (Exception e) {

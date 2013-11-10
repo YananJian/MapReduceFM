@@ -70,12 +70,18 @@ public class FileUploader
 
   public static void main(String[] args)
   {
-    String path = args[0];
-    String filename = args[1];
-    int nReplicas = Integer.parseInt(args[2]);
-    String registryHost = args[3];
-    int registryPort = Integer.parseInt(args[4]);
-    FileUploader uploader = new FileUploader(path, filename, nReplicas, registryHost, registryPort);
+    FileUploader uploader = null;
+    try {
+      String path = args[0];
+      String filename = args[1];
+      int nReplicas = Integer.parseInt(args[2]);
+      String registryHost = args[3];
+      int registryPort = Integer.parseInt(args[4]);
+      uploader = new FileUploader(path, filename, nReplicas, registryHost, registryPort);
+    } catch (Exception e) {
+      System.out.println("usage: <path> <filename> <#replicas>");
+      System.exit(1);
+    }
     try {
       uploader.upload();
     } catch (Exception e) {

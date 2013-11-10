@@ -80,7 +80,7 @@ public class NameNodeImpl implements NameNode
       /* file already exists */
       return 0;
     /* otherwise */
-    if (nReplicas == 0)
+    if (nReplicas == 0 || nReplicas > dataNodeInfos.size())
       nReplicas = nReplicasDefault;
     fileInfos.put(filename, new FileInfo(filename, nReplicas));
     return nReplicas;
