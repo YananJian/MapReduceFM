@@ -225,11 +225,11 @@ public class JobTrackerImpl implements JobTracker{
 		Set mcIDsets = get_mapper_machineIDs(jobID);
 		Iterator mc_iter = mcIDsets.iterator();
 		
-		
 		//System.out.println("Machine IDS:"+mcIDs.toString());
 		while (iter.hasNext()) { 
 		    Map.Entry entry = (Map.Entry) iter.next(); 
 		    String key = (String) entry.getKey(); 
+		    System.out.println("mcID_hashID mapping:"+key);
 		    String val = (String) entry.getValue(); 
 		    try {
 				TaskTracker w_taskTracker = (TaskTracker) registry.lookup("TaskTracker_"+key);
@@ -237,8 +237,9 @@ public class JobTrackerImpl implements JobTracker{
 				
 				while(mc_iter.hasNext())
 				{
-					System.out.println("Machine ID:"+key);
+					//System.out.println("Machine ID:"+key);
 					String curr = mc_iter.next().toString();
+					System.out.println("MCIDsets:"+curr);
 					if (curr.equals(key))
 						continue;
 					TaskTracker r_taskTracker = (TaskTracker) registry.lookup("TaskTracker_"+curr);
