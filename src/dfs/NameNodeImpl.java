@@ -61,6 +61,9 @@ public class NameNodeImpl implements NameNode
     }
   }
 
+  public DataNode getDataNode(int id) throws RemoteException
+    { return dataNodeInfos.get(id).getDataNode(); }
+
   public int createFile(String filename, int nReplicas) throws RemoteException
   {
     if (fileInfos.get(filename) != null)
@@ -87,14 +90,14 @@ public class NameNodeImpl implements NameNode
     return blockId;
   }
 
-  public int allocateBlock() throws RemoteException
+  public DataNode allocateBlock() throws RemoteException
   {
     /* select DataNode with least #blocks */
     SortedSet<Map.Entry<Integer, DataNodeInfo>> sortedEntries = getSortedEntries(dataNodeInfos);
     for (Map.Entry<Integer, DataNodeInfo> entry : sortedEntries)
       if (entry.getValue().isAlive())
-        return entry.getKey();
-    return -1;
+        return entry.getValue().getDataNode();
+    return null;
   }
 
   public void commitBlockAllocation(int dataNodeId, String filename, int blockId) throws RemoteException
@@ -283,9 +286,9 @@ public class NameNodeImpl implements NameNode
             /* try to place replica */
             while (true) {
               try {
-                int dest = allocateBlock();
-                dataNodeInfos.get(dest).getDataNode().putBlock(blockId, replica);
-                commitBlockAllocation(dest, filename, blockId);
+                DataNode datanode = allocateBlock();
+                datanode.putBlock(blockId, replica);
+                commitBlockAllocation(datanode.getId(), filename, blockId);
                 break;
               } catch (RemoteException re) {
                 /* try next node */
