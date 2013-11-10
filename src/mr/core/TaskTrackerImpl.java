@@ -7,6 +7,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -26,8 +27,10 @@ import mr.common.Msg;
 import mr.io.TextWritable;
 import mr.io.Writable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -105,16 +108,39 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		
 	}
 	
-	public String readstr(String path)
+	public List<String> read_dir(String path, String hashID)
 	{
+		File dir = new File(path);
+		File[] files = dir.listFiles();
+		List<String> ret_names = new ArrayList<String>();
+		for (int i=0; i< files.length; i++)
+		{
+			String name = files[i].getName();
+			System.out.println("Name:"+name+", machineID:"+id);
+			String tmp[] = name.split("@");
+			if (tmp.length > 0)
+				if (tmp[tmp.length-1].equals(hashID))
+				{
+					System.out.println("Filtered Name:"+name+", machineID:"+id);
+					ret_names.add(name);		
+				}
+		}
+		return ret_names;
+	}
+	
+	public String readstr(String path, String name)
+	{
+		
 		StringBuilder content = new StringBuilder();
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(path));
+			BufferedReader br = new BufferedReader(new FileReader(path+'/'+name));
 			
 		    String line = null;
 		    while ((line = br.readLine()) != null)
 		    	content.append(line);
 		    br.close();
+		    File delf = new File(path + '/' + name);
+			delf.delete();
 		    return content.toString();
 			
 		} catch (FileNotFoundException e) {
@@ -132,7 +158,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(path, true));
 			//FileOutputStream file_out=new FileOutputStream(path,true);
-			out.write(content);		
+			out.write(content+'\n');		
 			out.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -155,8 +181,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		Future f1 = exec.submit(task);
 		try {
 			HashMap<String, Integer> idSize = (HashMap<String, Integer>) f1.get();
-			System.out.println("Result from sub thread");
-			System.out.println(idSize.toString());
+			
 			/*
 			 * After executing task, wrap the return value into Heartbeat Msg.
 			 * Send Heartbeat to JobTracker.
@@ -169,6 +194,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			msg.setTask_tp(TASK_TP.MAPPER);
 			msg.setTask_stat(TASK_STATUS.FINISHED);			
 			msg.setContent(idSize);
+			msg.setMachine_id(String.valueOf(id));
 			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
 			this.heartbeats.offer(msg);
 			//this.heartbeats.add(msg);

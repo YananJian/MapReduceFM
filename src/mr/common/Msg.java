@@ -16,6 +16,7 @@ public class Msg implements java.io.Serializable{
 	private JOB_STATUS job_stat = null;
 	private TASK_STATUS task_stat = null;
 	private String blk_fpath = null;
+	private String machine_id = null;
 	//private HashMap<String, Integer> 
 	
 	public MSG_TP getMsg_tp() {
@@ -80,6 +81,14 @@ public class Msg implements java.io.Serializable{
 
 	public void setTask_stat(TASK_STATUS task_stat) {
 		this.task_stat = task_stat;
+	}
+
+	public String getMachine_id() {
+		return machine_id;
+	}
+
+	public void setMachine_id(String machine_id) {
+		this.machine_id = machine_id;
 	}
 	
 }

@@ -60,7 +60,7 @@ public class Context {
 			if (!f.exists())
 				f.mkdirs();
 			//String path = dir + job_id+"@"+task_id + "@" +String.valueOf(m_id);
-			String path = dir + '/' + String.valueOf(m_id);
+			String path = dir + '/' + task_id + '@' + String.valueOf(m_id);
 			Integer line_ct = idSize.get(String.valueOf(m_id));
 			if (line_ct != null)
 				line_ct ++;
