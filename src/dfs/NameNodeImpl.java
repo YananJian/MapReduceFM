@@ -21,6 +21,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class NameNodeImpl implements NameNode
 {
+  private boolean terminated;
   private int nReplicasDefault;
   private int healthCheckInterval;
   private int blockSize;
@@ -36,6 +37,7 @@ public class NameNodeImpl implements NameNode
    */
   public NameNodeImpl(int nReplicasDefault, int healthCheckInterval, int blockSize, int port)
   {
+    this.terminated = false;
     this.nReplicasDefault = nReplicasDefault;
     this.healthCheckInterval = healthCheckInterval;
     this.blockSize = blockSize;
@@ -53,6 +55,8 @@ public class NameNodeImpl implements NameNode
 
   public void register(int id, DataNode datanode) throws RemoteException
   {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
     if (dataNodeInfos.get(id) != null) {
       dataNodeInfos.get(id).setDataNode(datanode);
       dataNodeInfos.get(id).setAlive(true);
@@ -62,10 +66,16 @@ public class NameNodeImpl implements NameNode
   }
 
   public DataNode getDataNode(int id) throws RemoteException
-    { return dataNodeInfos.get(id).getDataNode(); }
+  {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
+    return dataNodeInfos.get(id).getDataNode();
+  }
 
   public int createFile(String filename, int nReplicas) throws RemoteException
   {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
     if (fileInfos.get(filename) != null)
       /* file already exists */
       return 0;
@@ -77,10 +87,16 @@ public class NameNodeImpl implements NameNode
   }
 
   public int getBlockSize() throws RemoteException
-    { return blockSize; }
+  {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
+    return blockSize;
+  }
 
   public int getNextBlockId(String filename) throws RemoteException
   {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
     int blockId = 0;
     synchronized(blockCounter) {
       blockId =  blockCounter++;
@@ -92,6 +108,8 @@ public class NameNodeImpl implements NameNode
 
   public DataNode allocateBlock() throws RemoteException
   {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
     /* select DataNode with least #blocks */
     SortedSet<Map.Entry<Integer, DataNodeInfo>> sortedEntries = getSortedEntries(dataNodeInfos);
     for (Map.Entry<Integer, DataNodeInfo> entry : sortedEntries)
@@ -102,12 +120,16 @@ public class NameNodeImpl implements NameNode
 
   public void commitBlockAllocation(int dataNodeId, String filename, int blockId) throws RemoteException
   {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
     blockInfos.get(blockId).addDataNode(dataNodeId);
     dataNodeInfos.get(dataNodeId).addBlock(blockId);
   }
 
   public Map<Integer, List<Integer>> getAllBlocks(String filename) throws RemoteException
   {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
     FileInfo fi = fileInfos.get(filename);
     Map<Integer, List<Integer>> result = new LinkedHashMap<Integer, List<Integer>>();
     List<Integer> blockIds = fi.getBlockIds();
@@ -118,6 +140,8 @@ public class NameNodeImpl implements NameNode
 
   public String describeDFS() throws RemoteException
   {
+    if (terminated)
+      throw new RemoteException("DFS terminating");
     StringBuilder dfs = new StringBuilder();
     dfs.append("========= dfs info =========\n");
     dfs.append("#default replicas: " + nReplicasDefault + "\n");
@@ -138,11 +162,12 @@ public class NameNodeImpl implements NameNode
   public void terminate(String fsImageDir) throws RemoteException
   {
     try {
+      terminated = true;
       /* write metadata to fsImage */
       File fsImage = new File(fsImageDir);
       BufferedWriter bw = new BufferedWriter(new FileWriter(fsImage));
       /* write file info */
-      bw.write(fileInfos.size());
+      bw.write(String.valueOf(fileInfos.size()));
       bw.newLine();
       for (Map.Entry<String, FileInfo> entry : fileInfos.entrySet()) {
         FileInfo fi = (FileInfo) entry.getValue();
@@ -150,7 +175,7 @@ public class NameNodeImpl implements NameNode
         bw.newLine();
       }
       /* write block info */
-      bw.write(blockInfos.size());
+      bw.write(String.valueOf(blockInfos.size()));
       bw.newLine();
       for (Map.Entry<Integer, BlockInfo> entry : blockInfos.entrySet()) {
         BlockInfo bi = (BlockInfo) entry.getValue();
@@ -158,7 +183,7 @@ public class NameNodeImpl implements NameNode
         bw.newLine();
       }
       /* write datanode info */
-      bw.write(dataNodeInfos.size());
+      bw.write(String.valueOf(dataNodeInfos.size()));
       bw.newLine();
       for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet()) {
         DataNodeInfo dni = (DataNodeInfo) entry.getValue();
@@ -170,11 +195,14 @@ public class NameNodeImpl implements NameNode
       /* terminate datanode */
       for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet()) {
         DataNodeInfo dni = (DataNodeInfo) entry.getValue();
-        dni.getDataNode().terminate();
+        if (dni.isAlive())
+          dni.getDataNode().terminate();
       }
 
       /* terminate namenode */
-      System.exit(1);
+      registry.unbind("NameNode");
+      UnicastRemoteObject.unexportObject(this, true);
+      UnicastRemoteObject.unexportObject(registry, true);
     } catch (Exception e) {
       throw new RemoteException("Exception caught", e);
     }
@@ -234,8 +262,13 @@ public class NameNodeImpl implements NameNode
     }
 
     /* wait for each datanode to get online */
-    while (dataNodeInfos.size() < nDataNodes) {
-      System.out.println("#Registered DataNodes: " + dataNodeInfos.size() + "/" + nDataNodes);
+    int currDataNodes = 0;
+    while (currDataNodes < nDataNodes) {
+      currDataNodes = 0;
+      for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet())
+        if (entry.getValue().isAlive())
+          currDataNodes++;
+      System.out.println("#Registered DataNodes: " + currDataNodes + "/" + nDataNodes);
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {
@@ -247,7 +280,7 @@ public class NameNodeImpl implements NameNode
   public void healthCheck()
   {
     /* start healthcheck */
-    while (true) {
+    while (!terminated) {
       try {
         Thread.sleep(healthCheckInterval);
       } catch (InterruptedException e) {

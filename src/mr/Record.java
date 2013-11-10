@@ -1,24 +1,29 @@
 package mr;
 
+import java.util.LinkedList;
+
 import mr.io.Writable;
 
 public class Record implements Comparable<Record> {
   private Writable key;
-  private Writable value;
+  private Iterable<Writable> values;
   private String filename;
 
-  public Record(Writable key, Writable value, String filename)
+  public Record(Writable key, String filename)
   {
     this.key = key;
-    this.value = value;
+    this.values = new LinkedList<Writable>();
     this.filename = filename;
   }
 
   public Writable getKey()
     { return this.key; }
 
-  public Writable getValue()
-    { return this.value; }
+  public void addValue(Writable value)
+    { ((LinkedList<Writable>)values).add(value); }
+
+  public Iterable<Writable> getValues()
+    { return this.values; }
 
   public String getFileName()
     { return this.filename; }

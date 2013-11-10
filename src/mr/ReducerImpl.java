@@ -1,5 +1,7 @@
 package mr;
 
+import java.util.Iterator;
+import mr.io.Writable;
 import mr.io.TextWritable;
 
 public class ReducerImpl extends Reducer<TextWritable, TextWritable, TextWritable, TextWritable>
@@ -21,8 +23,14 @@ public class ReducerImpl extends Reducer<TextWritable, TextWritable, TextWritabl
     Record record = null;
     while ((record = reducer.getNext()) != null) {
       String key = (String) record.getKey().getVal();
-      String value = (String) record.getValue().getVal();
-      System.out.println(key + " " + value);
+      System.out.println(key);
+      Iterable<Writable> values = (Iterable<Writable>) record.getValues();
+      Iterator<Writable> itor = values.iterator();
+      while (itor.hasNext()) {
+        Writable w = (Writable) itor.next();
+        System.out.print(" " + w.getVal());
+      }
+      System.out.println();
     }
   }
 }
