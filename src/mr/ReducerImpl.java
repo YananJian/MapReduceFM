@@ -14,7 +14,7 @@ public class ReducerImpl extends Reducer<TextWritable, TextWritable, TextWritabl
   public static void main(String[] args) throws Exception
   {
     ReducerImpl reducer = new ReducerImpl(args[0]);
-    reducer.init();
+    reducer.bootstrap();
     Record record = null;
     while ((record = reducer.getNext()) != null) {
       String key = (String) record.getKey().getVal();

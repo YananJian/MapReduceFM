@@ -26,7 +26,7 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         records = new LinkedList<Record>();
     }
 
-    public void init() {
+    public void bootstrap() {
         /* insert one record/file into recordQueue */
         File dir = new File(dirname);
         File[] files = dir.listFiles();
