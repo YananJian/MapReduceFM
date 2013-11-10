@@ -1,5 +1,10 @@
 package dfs;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.lang.Thread;
 import java.util.Comparator;
 import java.util.List;
@@ -47,10 +52,24 @@ public class NameNodeImpl implements NameNode
   }
 
   public void register(int id, DataNode datanode) throws RemoteException
-    { dataNodeInfos.put(id, new DataNodeInfo(id, datanode)); }
+  {
+    if (dataNodeInfos.get(id) != null) {
+      dataNodeInfos.get(id).setDataNode(datanode);
+      dataNodeInfos.get(id).setAlive(true);
+    } else {
+      dataNodeInfos.put(id, new DataNodeInfo(id, datanode));
+    }
+  }
+
+  public DataNode getDataNode(int id) throws RemoteException
+    { return dataNodeInfos.get(id).getDataNode(); }
 
   public int createFile(String filename, int nReplicas) throws RemoteException
   {
+    if (fileInfos.get(filename) != null)
+      /* file already exists */
+      return 0;
+    /* otherwise */
     if (nReplicas == 0)
       nReplicas = nReplicasDefault;
     fileInfos.put(filename, new FileInfo(filename, nReplicas));
@@ -71,14 +90,14 @@ public class NameNodeImpl implements NameNode
     return blockId;
   }
 
-  public int allocateBlock() throws RemoteException
+  public DataNode allocateBlock() throws RemoteException
   {
     /* select DataNode with least #blocks */
     SortedSet<Map.Entry<Integer, DataNodeInfo>> sortedEntries = getSortedEntries(dataNodeInfos);
     for (Map.Entry<Integer, DataNodeInfo> entry : sortedEntries)
       if (entry.getValue().isAlive())
-        return entry.getKey();
-    return -1;
+        return entry.getValue().getDataNode();
+    return null;
   }
 
   public void commitBlockAllocation(int dataNodeId, String filename, int blockId) throws RemoteException
@@ -116,7 +135,52 @@ public class NameNodeImpl implements NameNode
     return dfs.toString();
   }
 
-  public void bootstrap(int nDataNodes)
+  public void terminate(String fsImageDir) throws RemoteException
+  {
+    try {
+      /* write metadata to fsImage */
+      File fsImage = new File(fsImageDir);
+      BufferedWriter bw = new BufferedWriter(new FileWriter(fsImage));
+      /* write file info */
+      bw.write(fileInfos.size());
+      bw.newLine();
+      for (Map.Entry<String, FileInfo> entry : fileInfos.entrySet()) {
+        FileInfo fi = (FileInfo) entry.getValue();
+        bw.write(fi.toFsImage());
+        bw.newLine();
+      }
+      /* write block info */
+      bw.write(blockInfos.size());
+      bw.newLine();
+      for (Map.Entry<Integer, BlockInfo> entry : blockInfos.entrySet()) {
+        BlockInfo bi = (BlockInfo) entry.getValue();
+        bw.write(bi.toFsImage());
+        bw.newLine();
+      }
+      /* write datanode info */
+      bw.write(dataNodeInfos.size());
+      bw.newLine();
+      for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet()) {
+        DataNodeInfo dni = (DataNodeInfo) entry.getValue();
+        bw.write(dni.toFsImage());
+        bw.newLine();
+      }
+      bw.close();
+
+      /* terminate datanode */
+      for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet()) {
+        DataNodeInfo dni = (DataNodeInfo) entry.getValue();
+        dni.getDataNode().terminate();
+      }
+
+      /* terminate namenode */
+      System.exit(1);
+    } catch (Exception e) {
+      throw new RemoteException("Exception caught", e);
+    }
+  }
+
+  public void bootstrap(int nDataNodes, String fsImageDir)
   {
     /* register itself to registry */
     try {
@@ -125,6 +189,48 @@ public class NameNodeImpl implements NameNode
     } catch (RemoteException e) {
       e.printStackTrace();
       System.exit(1);
+    }
+
+    /* init metadata from fsImage */
+    File fsImage = new File(fsImageDir);
+    if (fsImage.exists()) {
+      try {
+        BufferedReader br = new BufferedReader(new FileReader(fsImage));
+        /* parse fileInfos */
+        int n = Integer.parseInt(br.readLine());
+        for (int i = 0; i < n; i++) {
+          String line = br.readLine();
+          String[] words = line.split(" ");
+          FileInfo fi = new FileInfo(words[0], Integer.parseInt(words[1]));
+          for (int j = 2; j < words.length; j++)
+            fi.addBlockId(Integer.parseInt(words[j]));
+          fileInfos.put(words[0], fi);
+        }
+        /* parse blockInfos */
+        n = Integer.parseInt(br.readLine());
+        for (int i = 0; i < n; i++) {
+          String line = br.readLine();
+          String[] words = line.split(" ");
+          BlockInfo bi = new BlockInfo(Integer.parseInt(words[0]), words[1]);
+          for (int j = 2; j < words.length; j++)
+            bi.addDataNode(Integer.parseInt(words[j]));
+          blockInfos.put(Integer.parseInt(words[0]), bi);
+        }
+        /* parse dataNodeInfos */
+        n = Integer.parseInt(br.readLine());
+        for (int i = 0; i < n; i++) {
+          String line = br.readLine();
+          String[] words = line.split(" ");
+          DataNodeInfo dni = new DataNodeInfo(Integer.parseInt(words[0]), null);
+          for (int j = 2; j < words.length; j++)
+            dni.addBlock(Integer.parseInt(words[j]));
+          dataNodeInfos.put(Integer.parseInt(words[0]), dni);
+        }
+        br.close();
+      } catch (Exception e) {
+        System.out.println("fsImage corrupted");
+        System.exit(1);
+      }
     }
 
     /* wait for each datanode to get online */
@@ -180,9 +286,9 @@ public class NameNodeImpl implements NameNode
             /* try to place replica */
             while (true) {
               try {
-                int dest = allocateBlock();
-                dataNodeInfos.get(dest).getDataNode().putBlock(blockId, replica);
-                commitBlockAllocation(dest, filename, blockId);
+                DataNode datanode = allocateBlock();
+                datanode.putBlock(blockId, replica);
+                commitBlockAllocation(datanode.getId(), filename, blockId);
                 break;
               } catch (RemoteException re) {
                 /* try next node */
@@ -218,9 +324,10 @@ public class NameNodeImpl implements NameNode
     int blockSize = Integer.parseInt(args[2]);
     int port = Integer.parseInt(args[3]);
     int nDataNodes = Integer.parseInt(args[4]);
+    String fsImageDir = args[5];
     NameNodeImpl namenode = new NameNodeImpl(nReplicasDefault, healthCheckInterval, blockSize, port);
     /* bootstrap */
-    namenode.bootstrap(nDataNodes);
+    namenode.bootstrap(nDataNodes, fsImageDir);
     /* register to registry and start health check */
     namenode.healthCheck();
   }

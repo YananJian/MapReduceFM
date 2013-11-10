@@ -30,7 +30,8 @@ public class FileUploader
     /* create metadata for namenode */
     Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
     NameNode namenode = (NameNode) registry.lookup("NameNode");
-    nReplicas = namenode.createFile(filename, nReplicas);
+    if ((nReplicas = namenode.createFile(filename, nReplicas)) == 0)
+      throw new IOException("File already exists");
     /* upload content to datanodes */
     int blockSize = namenode.getBlockSize();
     int blockId = namenode.getNextBlockId(filename);
@@ -43,8 +44,7 @@ public class FileUploader
         /* buffer full, put block to datanodes */
         for (int i = 0; i < nReplicas; i++) {
           while (true) {
-            int dataNodeId = namenode.allocateBlock();
-            DataNode datanode = (DataNode) registry.lookup(Integer.toString(dataNodeId));
+            DataNode datanode = namenode.allocateBlock();
             try {
               datanode.putBlock(blockId, content.toString());
             } catch (RemoteException e) {
@@ -52,7 +52,7 @@ public class FileUploader
               e.printStackTrace();
               continue;
             }
-            namenode.commitBlockAllocation(dataNodeId, filename, blockId);
+            namenode.commitBlockAllocation(datanode.getId(), filename, blockId);
             break;
           }
         }

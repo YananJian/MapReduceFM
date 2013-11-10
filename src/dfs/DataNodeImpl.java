@@ -19,18 +19,17 @@ public class DataNodeImpl implements DataNode
 {
   private int id;
   private String dir;
-  private String registryHost;
-  private int registryPort;
   private List<Integer> blockIds;
 
-  public DataNodeImpl(int id, String dir, String registryHost, int registryPort)
+  public DataNodeImpl(int id, String dir)
   {
     this.id = id;
-    this.registryHost = registryHost;
-    this.registryPort = registryPort;
     this.dir = dir;
     blockIds = new LinkedList<Integer>();
   }
+
+  public int getId() throws RemoteException
+    { return this.id; }
 
   public void putBlock(int blockId, String content) throws RemoteException
   {
@@ -65,46 +64,29 @@ public class DataNodeImpl implements DataNode
   public void heartBeat() throws RemoteException
     {}
 
-  public void bootstrap()
+  public void terminate() throws RemoteException
+    { System.exit(1); }
+
+  public void bootstrap(int port, String registryHost, int registryPort)
   {
-    /* get all blocks */
+    /* init dir */
     File folder = new File(dir);
     if (!folder.exists())
       folder.mkdirs();
-    Registry registry = null;
+    /* export to runtime */
     DataNode stub = null;
     try {
-      stub = (DataNode) UnicastRemoteObject.exportObject(this, 0);
+      stub = (DataNode) UnicastRemoteObject.exportObject(this, port);
     } catch (RemoteException e) {
       e.printStackTrace();
       System.exit(1);
     }
-    /* rebind to registry */
-    while (true) {
-      System.out.println("Trying to register self");
-      try {
-        registry = LocateRegistry.getRegistry(registryHost, registryPort);
-        registry.rebind(Integer.toString(id), stub);
-        break;
-      } catch (Exception e) {
-        /* NameNode not ready, keep trying */
-        e.printStackTrace();
-        try {
-          Thread.sleep(5000);
-        } catch (InterruptedException ie) {
-          e.printStackTrace();
-        }
-      }
-    }
     /* register to namenode */
     while (true) {
       try {
+        Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
         NameNode namenode = (NameNode) registry.lookup("NameNode");
-        if (namenode == null) {
-          System.out.println("Oops");
-          System.out.println(registryHost + registryPort);
-        }
-        namenode.register(id, this);
+        namenode.register(id, stub);
         System.out.println("Registered");
         break;
       } catch (Exception e) {
@@ -123,9 +105,10 @@ public class DataNodeImpl implements DataNode
   {
     int id = Integer.parseInt(args[0]);
     String dir = args[1];
-    String registryHost = args[2];
-    int registryPort = Integer.parseInt(args[3]);
-    DataNodeImpl datanode = new DataNodeImpl(id, dir, registryHost, registryPort);
-    datanode.bootstrap();
+    int port = Integer.parseInt(args[2]);
+    String registryHost = args[3];
+    int registryPort = Integer.parseInt(args[4]);
+    DataNodeImpl datanode = new DataNodeImpl(id, dir);
+    datanode.bootstrap(port, registryHost, registryPort);
   }
 }

@@ -1,0 +1,29 @@
+<project name="MapReduceFM" default="compile" basedir=".">
+    <description>
+        build file for MapReduce
+    </description>
+  <!-- set global properties for this build -->
+  <property name="src" location="src"/>
+  <property name="doc" location="doc"/>
+  <property name="bin" location="bin"/>
+
+  <target name="init">
+    <!-- Create the bin directory structure used by compile -->
+    <mkdir dir="${bin}"/>
+  </target>
+
+  <target name="doc" depends="init" description="generate documentation">
+    <javadoc sourcepath="${src}" destdir="${doc}"/>
+  </target>
+
+  <target name="compile" depends="doc" description="compile the source ">
+    <!-- Compile the java code from ${src} into ${bin} -->
+    <javac srcdir="${src}" destdir="${bin}" includeantruntime="false" debug="true"/>
+  </target>
+
+  <target name="clean" description="clean up" >
+    <!-- Delete the ${doc}, ${bin} and ${dist} directory trees -->
+    <delete dir="${doc}"/>
+    <!-- <delete dir="${bin}"/> -->
+  </target>
+</project>

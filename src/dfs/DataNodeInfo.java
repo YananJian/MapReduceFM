@@ -31,6 +31,9 @@ public class DataNodeInfo implements Comparable<DataNodeInfo>
   public int getId()
     { return id; }
 
+  public void setDataNode(DataNode datanode)
+    { this.datanode = datanode; }
+
   public DataNode getDataNode()
     { return datanode; }
 
@@ -48,6 +51,15 @@ public class DataNodeInfo implements Comparable<DataNodeInfo>
 
   public void setAlive(boolean alive)
     { this.alive = alive; }
+
+  public String toFsImage()
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append(id + " ");
+    for (int blockId : blockIds)
+      sb.append(blockId + " ");
+    return sb.toString();
+  }
 
   @Override
   public int compareTo(DataNodeInfo other)

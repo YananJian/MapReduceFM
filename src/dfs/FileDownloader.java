@@ -38,7 +38,7 @@ public class FileDownloader
       boolean success = false;
       /* try to get block from datanodes */
       for (Integer dataNodeId : dataNodeIds) {
-        DataNode datanode = (DataNode) registry.lookup(dataNodeId.toString());
+        DataNode datanode = namenode.getDataNode(dataNodeId);
         try {
           bw.write(datanode.getBlock(blockId));
           success = true;
