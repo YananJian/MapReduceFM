@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.Collections;
 
+import mr.io.Writable;
 import mr.io.TextWritable;
 
 public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
@@ -25,7 +26,7 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         records = new LinkedList<Record>();
     }
 
-    public void bootstrap() {
+    public void init() {
         /* insert one record/file into recordQueue */
         File dir = new File(dirname);
         File[] files = dir.listFiles();
@@ -43,7 +44,9 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                     TextWritable value = new TextWritable();
                     key.setVal(words[0]);
                     value.setVal(words[1]);
-                    records.add(new Record(key, value, filename));
+                    Record record = new Record(key, filename);
+                    record.addValue(value);
+                    records.add(record);
                 }
                 br.close();
             } catch (IOException e) {
@@ -58,29 +61,36 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
     {
         if (records.isEmpty())
           return null;
-        Record record = records.poll();
-        String filename = record.getFileName();
-        File file = new File(dirname+filename);
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        /* fix skipCount */
-        int skipCount = skipCounts.get(filename);
-        skipCounts.put(filename, skipCount+1);
-        /* skip first fileCount lines */
-        for (int i = 0; i < skipCount; i++)
-            br.readLine();
-        String line = br.readLine();
-        if (line != null) {
-            String[] words = line.split(" ");
-            /* HARD CODE TYPE TO BE TEXTWRITABLE */
-            TextWritable key = new TextWritable();
-            TextWritable value = new TextWritable();
-            key.setVal(words[0]);
-            value.setVal(words[1]);
-            /* reinsert entry */
-            records.add(new Record(key, value, filename));
-            Collections.sort(records);
+        Writable key = records.getFirst().getKey();
+        Record result = new Record(key, null);
+        while (!records.isEmpty() && records.getFirst().getKey().getVal().hashCode() == key.getVal().hashCode()) {
+            Record record = records.poll();
+            result.addValue((Writable) record.getValues().iterator().next());
+            String filename = record.getFileName();
+            File file = new File(dirname+filename);
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            /* fix skipCount */
+            int skipCount = skipCounts.get(filename);
+            skipCounts.put(filename, skipCount+1);
+            /* skip first fileCount lines */
+            for (int i = 0; i < skipCount; i++)
+                br.readLine();
+            String line = br.readLine();
+            if (line != null) {
+                String[] words = line.split(" ");
+                /* HARD CODE TYPE TO BE TEXTWRITABLE */
+                TextWritable k = new TextWritable();
+                TextWritable v = new TextWritable();
+                k.setVal(words[0]);
+                v.setVal(words[1]);
+                /* reinsert entry */
+                Record tmp = new Record(k, filename);
+                tmp.addValue(v);
+                records.add(tmp);
+                Collections.sort(records);
+            }
+            br.close();
         }
-        br.close();
-        return record;
+        return result;
     }
 }
