@@ -19,12 +19,16 @@ public class DataNodeImpl implements DataNode
 {
   private int id;
   private String dir;
+  private String registryHost;
+  private int registryPort;
   private List<Integer> blockIds;
 
-  public DataNodeImpl(int id, String dir)
+  public DataNodeImpl(int id, String dir, String registryHost, int registryPort)
   {
     this.id = id;
     this.dir = dir;
+    this.registryHost = registryHost;
+    this.registryPort = registryPort;
     blockIds = new LinkedList<Integer>();
   }
 
@@ -65,9 +69,9 @@ public class DataNodeImpl implements DataNode
     {}
 
   public void terminate() throws RemoteException
-    { System.exit(1); }
+    { UnicastRemoteObject.unexportObject(this, true); }
 
-  public void bootstrap(int port, String registryHost, int registryPort)
+  public void bootstrap(int port)
   {
     /* init dir */
     File folder = new File(dir);
@@ -108,7 +112,7 @@ public class DataNodeImpl implements DataNode
     int port = Integer.parseInt(args[2]);
     String registryHost = args[3];
     int registryPort = Integer.parseInt(args[4]);
-    DataNodeImpl datanode = new DataNodeImpl(id, dir);
-    datanode.bootstrap(port, registryHost, registryPort);
+    DataNodeImpl datanode = new DataNodeImpl(id, dir, registryHost, registryPort);
+    datanode.bootstrap(port);
   }
 }

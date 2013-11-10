@@ -25,7 +25,7 @@ public class DataNodeInfo implements Comparable<DataNodeInfo>
     this.id = id;
     this.datanode = datanode;
     this.blockIds = new LinkedList<Integer>();
-    alive = true;
+    this.alive = false;
   }
 
   public int getId()
