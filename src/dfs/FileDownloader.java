@@ -10,6 +10,11 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+/**
+ * Facility to download a file from DFS
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class FileDownloader
 {
   private String path;
@@ -17,6 +22,13 @@ public class FileDownloader
   private String registryHost;
   private int registryPort;
 
+  /**
+   * Constructor
+   * @param path local path to store the file
+   * @param filename filename on dfs
+   * @param registryHost registry's host
+   * @param registryPort registry's port number
+   */
   public FileDownloader(String path, String filename, String registryHost, int registryPort)
   {
     this.path = path;
@@ -25,6 +37,12 @@ public class FileDownloader
     this.registryPort = registryPort;
   }
 
+  /**
+   * Download a file and write to local path using RMI calls
+   * @throws IOException
+   * @throws NotBoundException
+   * @throws RemoteException
+   */
   public void download() throws IOException, NotBoundException,  RemoteException
   {
     /* get all blocks and its datanodes */
@@ -56,6 +74,10 @@ public class FileDownloader
     bw.close();
   }
 
+  /**
+   * Main method of FileDownloader
+   * @param args command-line arguments
+   */
   public static void main(String[] args)
   {
     FileDownloader downloader = null;

@@ -15,6 +15,11 @@ import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * Implementation for remote interface DataNode
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class DataNodeImpl implements DataNode
 {
   private int id;
@@ -23,6 +28,13 @@ public class DataNodeImpl implements DataNode
   private int registryPort;
   private List<Integer> blockIds;
 
+  /**
+   * Constructor
+   * @param id datanode's id
+   * @param dir directory for blocks
+   * @param registryHost registry's host
+   * @param registryPort registry's port number
+   */
   public DataNodeImpl(int id, String dir, String registryHost, int registryPort)
   {
     this.id = id;
@@ -32,9 +44,20 @@ public class DataNodeImpl implements DataNode
     blockIds = new LinkedList<Integer>();
   }
 
+  /**
+   * Get DataNode's ID
+   * @return datanode's id
+   * @throws RemoteException
+   */
   public int getId() throws RemoteException
     { return this.id; }
 
+  /**
+   * Put a block with blockId and given content to the DataNode
+   * @param blockId block's id
+   * @param content content in string format
+   * @throws RemoteException
+   */
   public void putBlock(int blockId, String content) throws RemoteException
   {
     blockIds.add(blockId);
@@ -47,6 +70,12 @@ public class DataNodeImpl implements DataNode
     }
   }
 
+  /**
+   * Retrieve content from block with given block ID
+   * @param blockId block's id
+   * @return block content in string format
+   * @throws RemoteException
+   */
   public String getBlock(int blockId) throws RemoteException
   {
     try {
@@ -62,15 +91,32 @@ public class DataNodeImpl implements DataNode
     }
   }
 
+  /**
+   * Get directory for data blocks
+   * @return directory for data blocks
+   * @throws RemoteException
+   */
   public String getDir() throws RemoteException
     { return dir; }
 
+  /**
+   * Heat beat method for health check
+   * @throws RemoteException;
+   */
   public void heartBeat() throws RemoteException
     {}
 
+  /**
+   * Terminate the DataNode
+   * @throws RemoteException
+   */
   public void terminate() throws RemoteException
     { UnicastRemoteObject.unexportObject(this, true); }
 
+  /**
+   * Bootstrap phase, register itself to NameNode
+   * @param port service's port number
+   */
   public void bootstrap(int port)
   {
     /* init dir */
@@ -105,6 +151,10 @@ public class DataNodeImpl implements DataNode
     }
   }
 
+  /**
+   * Main method for DataNodeImpl
+   * @param args command-line arguments
+   */
   public static void main(String[] args)
   {
     int id = Integer.parseInt(args[0]);

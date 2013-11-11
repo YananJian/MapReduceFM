@@ -19,6 +19,11 @@ import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * Implementation of remote interface NameNode
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class NameNodeImpl implements NameNode
 {
   private boolean terminated;
@@ -33,9 +38,12 @@ public class NameNodeImpl implements NameNode
 
   /**
    * Constructor
-   * @param port port of NameNode
+   * @param nReplicasDefault default replication factor
+   * @param healthCheckInterval health check interval in seconds
+   * @param blockSize partition size
+   * @param registryPort registry's port number
    */
-  public NameNodeImpl(int nReplicasDefault, int healthCheckInterval, int blockSize, int port)
+  public NameNodeImpl(int nReplicasDefault, int healthCheckInterval, int blockSize, int registryPort)
   {
     this.terminated = false;
     this.nReplicasDefault = nReplicasDefault;
@@ -43,7 +51,7 @@ public class NameNodeImpl implements NameNode
     this.blockSize = blockSize;
     blockCounter = 0;
     try {
-      registry = LocateRegistry.createRegistry(port);
+      registry = LocateRegistry.createRegistry(registryPort);
     } catch (RemoteException e) {
       e.printStackTrace();
       System.exit(1);
@@ -53,6 +61,12 @@ public class NameNodeImpl implements NameNode
     dataNodeInfos = new TreeMap<Integer, DataNodeInfo>();
   }
 
+  /**
+   * Register a DataNode to this NameNode
+   * @param id datanode;s id
+   * @param datanode stub of datanode
+   * @throws RemoteException
+   */
   public void register(int id, DataNode datanode) throws RemoteException
   {
     if (terminated)
@@ -65,6 +79,11 @@ public class NameNodeImpl implements NameNode
     }
   }
 
+  /**
+   * Retrieve a stub of DataNode with given ID
+   * @return stub of datanode
+   * @throws RemoteException
+   */
   public DataNode getDataNode(int id) throws RemoteException
   {
     if (terminated)
@@ -72,6 +91,13 @@ public class NameNodeImpl implements NameNode
     return dataNodeInfos.get(id).getDataNode();
   }
 
+  /**
+   * Create metadata for given filename
+   * @param filename filename
+   * @param nReplicas requested replication factor
+   * @return actual replication factor
+   * @throws RemoteException
+   */
   public int createFile(String filename, int nReplicas) throws RemoteException
   {
     if (terminated)
@@ -86,6 +112,11 @@ public class NameNodeImpl implements NameNode
     return nReplicas;
   }
 
+  /**
+   * Retrieve the default block size
+   * @return default block size
+   * @throws RemoteException
+   */
   public int getBlockSize() throws RemoteException
   {
     if (terminated)
@@ -93,6 +124,12 @@ public class NameNodeImpl implements NameNode
     return blockSize;
   }
 
+  /**
+   * Retrieve block ID for the next block
+   * @param filename filename for the block
+   * @return block id for the next block
+   * @throws RemoteException
+   */
   public int getNextBlockId(String filename) throws RemoteException
   {
     if (terminated)
@@ -106,6 +143,11 @@ public class NameNodeImpl implements NameNode
     return blockId;
   }
 
+  /**
+   * Retrieve the next DataNode for storing the replica
+   * @return the next datanode chosen
+   * @throws RemoteException
+   */
   public DataNode allocateBlock() throws RemoteException
   {
     if (terminated)
@@ -118,6 +160,13 @@ public class NameNodeImpl implements NameNode
     return null;
   }
 
+  /**
+   * Commit the block allocation
+   * @param dataNodeId datanode id that sotres the block
+   * @param filename filename of the block
+   * @param blockId block id
+   * @throws RemoteException
+   */
   public void commitBlockAllocation(int dataNodeId, String filename, int blockId) throws RemoteException
   {
     if (terminated)
@@ -126,6 +175,12 @@ public class NameNodeImpl implements NameNode
     dataNodeInfos.get(dataNodeId).addBlock(blockId);
   }
 
+  /**
+   * Retrieve all block IDs with their DataNode IDs for the file with given filename
+   * @param filename filename of the blocks
+   * @return a map from block id to datanode ids
+   * @throws RemoteException
+   */
   public Map<Integer, List<Integer>> getAllBlocks(String filename) throws RemoteException
   {
     if (terminated)
@@ -138,6 +193,11 @@ public class NameNodeImpl implements NameNode
     return result;
   }
 
+  /**
+   * Describe information of the DFS
+   * @return human-readable string representing the dfs
+   * @throws RemoteException
+   */
   public String describeDFS() throws RemoteException
   {
     if (terminated)
@@ -159,6 +219,11 @@ public class NameNodeImpl implements NameNode
     return dfs.toString();
   }
 
+  /**
+   * Terminate all nodes, and write metadata to fsImage
+   * @param fsImageDir directory to fsImage
+   * @throws RemoteException
+   */
   public void terminate(String fsImageDir) throws RemoteException
   {
     try {
@@ -208,6 +273,12 @@ public class NameNodeImpl implements NameNode
     }
   }
 
+  /**
+   * Bootstrap phase, read metadata from fsImage, and wait for DataNodes to bootstrap
+   * @param nDataNodes number of datanodes
+   * @param fsImageDir directory of fsImage
+   * @param port service's port
+   */
   public void bootstrap(int nDataNodes, String fsImageDir, int port)
   {
     /* register itself to registry */
@@ -277,6 +348,9 @@ public class NameNodeImpl implements NameNode
     }
   }
 
+  /**
+   * Check DataNode's HeartBeat periodically, and create new replicas upon DataNode failure
+   */
   public void healthCheck()
   {
     /* start healthcheck */
@@ -334,6 +408,11 @@ public class NameNodeImpl implements NameNode
     } /* while */
   }
 
+  /**
+   * Static method that sort map entries
+   * @param map map to be sorted
+   * @return sorted set that contains map entries
+   */
   static <K, V extends Comparable<? super V>> SortedSet<Map.Entry<K, V>> getSortedEntries(Map<K, V> map) {
     SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
       new Comparator<Map.Entry<K,V>>() {
@@ -350,6 +429,10 @@ public class NameNodeImpl implements NameNode
   }
 
 
+  /**
+   * Main method for NameNodeImpl
+   * @param args command-line arguments
+   */
   public static void main(String[] args)
   {
     int nReplicasDefault = Integer.parseInt(args[0]);
