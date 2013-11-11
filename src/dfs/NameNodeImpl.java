@@ -387,31 +387,36 @@ public class NameNodeImpl implements NameNode
             String filename = blockInfos.get(blockId).getFileName();
             /* get all datanodes that has this block */
             List<Integer> dataNodeIds = blockInfos.get(blockId).getDataNodeIds();
-            String replica = null;
             /* assume datanodes that have this replica won't all fail at the same time */
-            for (int dataNodeId : dataNodeIds) {
-              if (dataNodeInfos.get(dataNodeId).isAlive()) {
-                /* get replica */
-                try {
-                  replica = dataNodeInfos.get(dataNodeId).getDataNode().getBlock(blockId);
-                  break;
-                } catch (RemoteException re) {
-                  /* try next node */
-                }
-              }
-            }
-            /* try to place replica */
             while (true) {
+              DataNode datanode = null;
               try {
-                DataNode datanode = allocateBlock();
-                datanode.putBlock(blockId, replica);
-                commitBlockAllocation(datanode.getId(), filename, blockId);
-                break;
+                datanode = allocateBlock();
               } catch (RemoteException re) {
-                /* try next node */
                 continue;
               }
-            } /* while */
+              boolean success = false;
+              for (int dataNodeId : dataNodeIds) {
+                if (dataNodeInfos.get(dataNodeId).isAlive()) {
+                  try {
+                    /* try to place replica */
+                    datanode.putBlock(dataNodeInfos.get(dataNodeId).getDataNode(), blockId);
+                    success = true;
+                    break;
+                  } catch (RemoteException re) {
+                    /* try next node */
+                  }
+                }
+              }
+              if (success) {
+                try {
+                  commitBlockAllocation(datanode.getId(), filename, blockId);
+                } catch (RemoteException re) {
+                  continue;
+                }
+                break;
+              }
+            }
           } /* for */
         } /* catch */
       } /* for */

@@ -68,7 +68,26 @@ public class DataNodeImpl implements DataNode
       bw.write(content);
       bw.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RemoteException("Exception caught", e);
+    }
+  }
+
+  /**
+   * Retrieve a block with blockId and given content to the DataNode directly from another DataNode
+   * @param other the sender
+   * @param blockId block's id
+   * @throws RemoteException
+   */
+  @Override
+  public void putBlock(DataNode datanode, int blockId) throws RemoteException
+  {
+    blockIds.add(blockId);
+    try {
+      BufferedWriter bw = new BufferedWriter(new FileWriter(dir + blockId));
+      bw.write(datanode.getBlock(blockId));
+      bw.close();
+    } catch (IOException e) {
+      throw new RemoteException("Exception caught", e);
     }
   }
 

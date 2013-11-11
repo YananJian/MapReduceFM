@@ -26,6 +26,14 @@ public interface DataNode extends Remote
   public void putBlock(int blockId, String content) throws RemoteException;
 
   /**
+   * Retrieve a block with blockId and given content to the DataNode directly from another DataNode
+   * @param other the sender
+   * @param blockId block's id
+   * @throws RemoteException
+   */
+  public void putBlock(DataNode datanode, int blockId) throws RemoteException;
+
+  /**
    * Retrieve content from block with given block ID
    * @param blockId block's id
    * @return block content in string format
