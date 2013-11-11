@@ -427,14 +427,48 @@ public class JobTrackerImpl implements JobTracker{
 		}
 	}
 	
-	public String desc_job(String jobID)
+    @Override
+	public String desc_job(String jobID) throws RemoteException
 	{
-		return "";
+        /* retrieve necessary data */
+        Job job = jobID_Job.get(jobID);
+        int nMapper = job.get_mapperct();
+        int nReducer = job.get_reducerct();
+        Map<String, TASK_STATUS> mapperStatus = job.get_mapperStatus();
+        Map<String, TASK_STATUS> reducerStatus = job.get_reducerStatus();
+        /* construct status msg */
+        StringBuilder sb = new StringBuilder();
+        sb.append("Job ID: " + jobID + "\n");
+        sb.append("Input File: " + job.get_fileName() + "\n");
+        sb.append("Output Path: " + job.get_fileOutputPath() + "\n");
+        sb.append("Mapper: " + job.get_mapper().getName() + "\t");
+        sb.append("#Mapper Instance: " + nMapper + "\n");
+        sb.append("Reducer: " + job.get_reducer().getName() + "\n");
+        sb.append("#Reducer Instance: " + nReducer + "\n");
+        int nFinishedMapper = 0;
+        for (Map.Entry<String, TASK_STATUS> entry : mapperStatus.entrySet())
+            if (entry.getValue() == TASK_STATUS.FINISHED)
+                nFinishedMapper++;
+        float mapperProgress = nFinishedMapper/nMapper*100;
+        int nFinishedReducer = 0;
+        for (Map.Entry<String, TASK_STATUS> entry : reducerStatus.entrySet())
+            if (entry.getValue() == TASK_STATUS.FINISHED)
+                nFinishedReducer++;
+        float reducerProgress = nFinishedReducer/nReducer*100;
+        sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "\n");
+		return sb.toString();
 	}
 	
-	public String desc_jobs()
+    @Override
+	public String desc_jobs() throws RemoteException
 	{
-		return "";
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, Job> entry : jobID_Job.entrySet()) {
+            sb.append("--------------------------------------------------\n");
+            sb.append(desc_job(entry.getKey()));
+        }
+        sb.append("--------------------------------------------------\n");
+		return sb.toString();
 	}
 	
 	public void terminate_job(String jobID)
