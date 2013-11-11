@@ -49,6 +49,7 @@ public class DataNodeImpl implements DataNode
    * @return datanode's id
    * @throws RemoteException
    */
+  @Override
   public int getId() throws RemoteException
     { return this.id; }
 
@@ -58,6 +59,7 @@ public class DataNodeImpl implements DataNode
    * @param content content in string format
    * @throws RemoteException
    */
+  @Override
   public void putBlock(int blockId, String content) throws RemoteException
   {
     blockIds.add(blockId);
@@ -76,6 +78,7 @@ public class DataNodeImpl implements DataNode
    * @return block content in string format
    * @throws RemoteException
    */
+  @Override
   public String getBlock(int blockId) throws RemoteException
   {
     try {
@@ -96,6 +99,7 @@ public class DataNodeImpl implements DataNode
    * @return directory for data blocks
    * @throws RemoteException
    */
+  @Override
   public String getDir() throws RemoteException
     { return dir; }
 
@@ -103,6 +107,7 @@ public class DataNodeImpl implements DataNode
    * Heat beat method for health check
    * @throws RemoteException;
    */
+  @Override
   public void heartBeat() throws RemoteException
     {}
 
@@ -110,6 +115,7 @@ public class DataNodeImpl implements DataNode
    * Terminate the DataNode
    * @throws RemoteException
    */
+  @Override
   public void terminate() throws RemoteException
     { UnicastRemoteObject.unexportObject(this, true); }
 

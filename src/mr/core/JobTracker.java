@@ -22,5 +22,6 @@ public interface JobTracker extends Remote, java.io.Serializable{
 	public void schedule(Job job) throws RemoteException;
 	//public void schedule_reducer(Job job) throws RemoteException;
 	public void heartbeat(Msg msg) throws RemoteException;
-	
+    public String desc_job(String jobID) throws RemoteException;
+    public String desc_jobs() throws RemoteException;
 }
