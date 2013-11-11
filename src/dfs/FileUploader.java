@@ -70,13 +70,13 @@ public class FileUploader
       throw new IOException("File already exists");
     /* upload content to datanodes */
     int blockSize = namenode.getBlockSize();
-    int blockId = namenode.getNextBlockId(filename);
     StringBuilder content = new StringBuilder();
     String line = "";
     while (line != null) {
       line = br.readLine();
       if (line == null || (content.length() != 0 && content.length() + line.length() > blockSize)) {
         /* buffer full, put block to datanodes */
+        int blockId = namenode.getNextBlockId(filename);
         for (int i = 0; i < nReplicas; i++) {
           while (true) {
             DataNode datanode = namenode.allocateBlock();
@@ -93,9 +93,6 @@ public class FileUploader
         }
         /* clear the buffer */
         content.setLength(0);
-        /* get new blockId */
-        if (line != null)
-          blockId = namenode.getNextBlockId(filename);
       }
       content.append(line);
       content.append("\n");
