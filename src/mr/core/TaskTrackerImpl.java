@@ -13,12 +13,15 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.ParameterizedType;
 
 import conf.Config;
+import dfs.FileUploader;
 import dfs.NameNode;
 import mr.Context;
 import mr.Mapper;
+import mr.Record;
 import mr.Reducer;
 import mr.Task;
 import mr.common.Constants.MSG_TP;
@@ -30,6 +33,7 @@ import mr.io.Writable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -223,6 +227,31 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_outputdir(write_path);
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
+		String ret_s = "";
+		try {
+			LinkedList<Record> contents = (LinkedList<Record>) f1.get();
+			Iterator<Record> iter = contents.iterator();
+			while(iter.hasNext())
+			{
+				Record r = iter.next();
+				String key = (String)r.getKey().getVal();
+				Iterable<Writable> vals = r.getValues();
+				for(Writable val: vals)
+				{
+					String s = key + "\t" + val.getVal().toString() +"\n";
+					ret_s += s;
+				}				
+			}
+			StringReader strr = new StringReader(ret_s);
+			BufferedReader br = new BufferedReader(strr);
+			//FileUploader uploader = new FileUploader(path, write_path+'/'+ , 0, registryHost, registryPort);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		System.out.println("Starting Reducer in TaskTracker, output_dir:"+write_path);
 	}
 	
@@ -248,12 +277,10 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		// TODO Auto-generated method stub
 		while(true)
 		{
-			Msg msg = this.heartbeats.poll();
-			
+			Msg msg = this.heartbeats.poll();			
 			if (msg != null)
 			{
-				jobTracker.heartbeat(msg);
-				
+				jobTracker.heartbeat(msg);				
 			}	
 			else
 			{

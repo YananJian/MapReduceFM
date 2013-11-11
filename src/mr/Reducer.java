@@ -42,7 +42,7 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         File[] files = dir.listFiles();
         for (File file : files) {
             String filename = file.getName();
-            System.out.println("-----Filename:"+filename);
+      
             skipCounts.put(filename, 1);
             try {
                 BufferedReader br = new BufferedReader(new FileReader(file));

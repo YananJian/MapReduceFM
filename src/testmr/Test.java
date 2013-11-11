@@ -13,7 +13,7 @@ public class Test {
 		@Override
 		public void map(TextWritable key, TextWritable val, Context context) {
 			// TODO Auto-generated method stub
-			System.out.println("Mapping, Key:"+key.getVal()+"\tValue:"+val.getVal());
+			
 			TextWritable _val = new TextWritable();
 			_val.setVal("1");
 			context.write(key, _val);
@@ -25,20 +25,22 @@ public class Test {
 		public void reduce(TextWritable key, Iterable<Writable> values, Context context)
 		{
 			int sum = 0;
-			System.out.println("reduced KEY:"+key.getVal());
+			IntWritable res_sum = new IntWritable();
 			for (Writable val:values)
 			{
 				TextWritable _val = (TextWritable) val;
-				System.out.println("reduced VAL:"+_val.getVal());
 				sum += Integer.parseInt(_val.getVal());
 			}
+			res_sum.setVal(sum);
+			context.write(key, res_sum);
+			
 			System.out.println("-----result: "+key.getVal() + "\t"+String.valueOf(sum));
 		}
 	}
 	public static void main(String args[])
 	{
 		//Job job = new Job();
-		String input_path = "/Users/yanan/javapro/workspace/testfiles/t1";
+		String input_path = "/Users/yanan/javapro/workspace/testfiles/t3";
 		String output_path = "/Users/yanan/javapro/workspace/testfiles/t2";
 		String tmp[] = input_path.split("/");
 		Job job = new Job();
