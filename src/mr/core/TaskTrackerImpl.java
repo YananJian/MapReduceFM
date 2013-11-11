@@ -59,6 +59,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	int port = 0;
 	//Queue<Msg> heartbeats = new LinkedList<Msg>();
 	LinkedBlockingQueue<Msg> heartbeats = new LinkedBlockingQueue<Msg>();
+	HashMap<String, Future> taskID_exec = new HashMap<String, Future>();
 	public TaskTrackerImpl(int id, String read_dir, String port, int reducer_ct)
 	{
 		this.id = id;		
@@ -80,6 +81,12 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		
 	}
 	
+	public void terminate(String taskID)
+	{
+		Future f = taskID_exec.get(taskID);
+		f.cancel(true);
+		System.out.println("Task "+taskID+" terminated");
+	}
 	
 	public void update_task_status()
 	{
@@ -191,6 +198,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_mapper_cls(mapper);
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
+		taskID_exec.put(mapper_id, f1);
 		try {
 			HashMap<String, Integer> idSize = (HashMap<String, Integer>) f1.get();
 			
@@ -231,6 +239,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_reducerCT(reducer_ct);
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
+		taskID_exec.put(reducer_id, f1);
 		String ret_s = "";
 		try {
 			LinkedList<Record> contents = (LinkedList<Record>) f1.get();

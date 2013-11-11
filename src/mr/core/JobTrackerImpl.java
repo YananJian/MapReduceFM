@@ -42,6 +42,7 @@ public class JobTrackerImpl implements JobTracker{
 	 * 
 	 * */
 	Hashtable<String, Hashtable<String, String>> mapper_machine = new Hashtable<String, Hashtable<String, String>>();
+	Hashtable<String, Hashtable<String, String>> reducer_machine = new Hashtable<String, Hashtable<String, String>> ();
 	Hashtable<String, Integer> preset_mapper_ct = new Hashtable<String, Integer>();
 	Hashtable<String, List<String>> preset_mapper_job_task = new Hashtable<String, List<String>>();
 	
@@ -286,6 +287,9 @@ public class JobTrackerImpl implements JobTracker{
 				Job job = this.jobID_Job.get(job_id);
 				Class<? extends Reducer> reducer = job.get_reducer();
 				tt.start_reducer(job_id, reducer_id, write_path, reducer);
+				Hashtable<String, String> rcmc = new Hashtable<String, String>();
+				rcmc.put(reducer_id, mcID);
+				reducer_machine.put(job_id, rcmc);
 				System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
 			} catch (AccessException e) {
 				// TODO Auto-generated catch block
@@ -434,12 +438,83 @@ public class JobTrackerImpl implements JobTracker{
 	
 	public String desc_jobs()
 	{
+		
 		return "";
 	}
-	
+
 	public void terminate_job(String jobID)
 	{
+		Job job = jobID_Job.get(jobID);
+		HashMap<String,TASK_STATUS> mapper_status = null;
+		HashMap<String,TASK_STATUS> reducer_status = null;
 		
+		mapper_status = job.get_mapperStatus();
+		
+		reducer_status = job.get_reducerStatus();
+		/*
+		 * terminating mappers
+		 * 
+		 * */
+		Iterator miter = mapper_status.entrySet().iterator();
+		while(miter.hasNext())
+		{
+			Entry pairs = (Entry) miter.next();
+			String mapperID = (String)pairs.getKey();
+			String machineID = mapper_machine.get(jobID).get(mapperID);
+			
+;			TASK_STATUS status = (TASK_STATUS)pairs.getValue();
+			if (status == TASK_STATUS.RUNNING)
+			{
+				TaskTracker tt;
+				try {
+					tt = (TaskTracker) registry.lookup("TaskTracker_"+machineID);
+					tt.terminate(mapperID);
+					System.out.println("Task "+mapperID +" is terminated");
+				} catch (AccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NotBoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+			else if (status == TASK_STATUS.FINISHED)
+				System.out.println("Task "+mapperID+" is finished");
+		}
+		Iterator riter = reducer_status.entrySet().iterator();
+		while(riter.hasNext())
+		{
+			Entry pairs = (Entry) miter.next();
+			String reducerID = (String)pairs.getKey();
+			String machineID = reducer_machine.get(jobID).get(reducerID);
+			
+;			TASK_STATUS status = (TASK_STATUS)pairs.getValue();
+			if (status == TASK_STATUS.RUNNING)
+			{
+				TaskTracker tt;
+				try {
+					tt = (TaskTracker) registry.lookup("TaskTracker_"+machineID);
+					tt.terminate(reducerID);
+					System.out.println("Task "+reducerID +" is terminated");
+				} catch (AccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NotBoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+			else if (status == TASK_STATUS.FINISHED)
+				System.out.println("Task "+reducerID+" is finished");
+		}
 	}
 	
 	public static void main(String[] args) {
