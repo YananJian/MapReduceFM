@@ -17,7 +17,7 @@ public class Msg implements java.io.Serializable{
 	private TASK_STATUS task_stat = null;
 	private String blk_fpath = null;
 	private String machine_id = null;
-	int aval_procs = -1;
+	private Integer aval_procs = -1;
 	//private HashMap<String, Integer> 
 	
 	public MSG_TP getMsg_tp() {
@@ -92,12 +92,12 @@ public class Msg implements java.io.Serializable{
 		this.machine_id = machine_id;
 	}
 	
-	public void set_aval_procs(int num)
+	public void set_aval_procs(Integer num)
 	{
 		this.aval_procs = num;
 	}
 	
-	public int get_aval_procs()
+	public Integer get_aval_procs()
 	{
 		return this.aval_procs;
 	}

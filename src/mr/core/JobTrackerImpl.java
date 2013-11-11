@@ -55,6 +55,8 @@ public class JobTrackerImpl implements JobTracker{
 	//Hashtable<String, List<String>> job_task_mapping = new Hashtable<String, List<String>>();
 	HashMap<String, String> jobID_outputdir = new HashMap<String, String>();
 	HashMap<String, Job> jobID_Job = new HashMap<String, Job>();
+	
+	HashMap<String, Integer> cpu_resource = new HashMap<String, Integer>();
 	Registry registry = null;
 	
 	
@@ -126,7 +128,7 @@ public class JobTrackerImpl implements JobTracker{
 		this.job_status.put(job_id, jstatus);
 	}
 	
-	private void update_preset_mapper(String jobID, String taskID, int ct)
+	/*private void update_preset_mapper(String jobID, String taskID, int ct)
 	{	
 		preset_mapper_ct.put(jobID, ct);
 		List<String> mapper_ids = preset_mapper_job_task.get(jobID);
@@ -140,8 +142,53 @@ public class JobTrackerImpl implements JobTracker{
 			mapper_ids.add(taskID);
 			preset_mapper_job_task.put(jobID, mapper_ids);
 		}				
+	}*/
+	
+	public void allocate_mapper(String machineID, String mapper_id, String blockID, Job job, Hashtable<String, String> mc_mp)
+	{
+		TaskTracker tt;
+		try {
+			tt = (TaskTracker)registry.lookup("TaskTracker_"+machineID);
+			tt.set_reducer_ct(reducer_ct);
+			mc_mp.put(mapper_id, machineID);
+			mapper_machine.put(job.get_jobId(), mc_mp);
+			System.out.println("prepare to start mapper");
+			tt.start_map(job.get_jobId(), mapper_id, blockID, job.get_mapper());
+			
+			job.set_mapperStatus(mapper_id, TASK_STATUS.RUNNING);
+			job.inc_mapperct();
+			jobID_Job.put(job.get_jobId(), job);
+			//update_preset_mapper(job.get_jobId(), mapper_id, ct);
+			System.out.println("Job Tracker trying to start map task on "+String.valueOf(machineID)
+					   												     +", mapperID:"+mapper_id);
+		} catch (AccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		  
 	}
 	
+	public String pick_idle_machine()
+	{
+		Iterator iter = this.cpu_resource.entrySet().iterator();
+		String arbi = "";
+		while(iter.hasNext())
+		{
+			Entry entry = (Entry) iter.next();
+			String machineID = (String)entry.getKey();
+			Integer res = (Integer) entry.getValue();
+			if (res > 0)
+				return machineID;
+			arbi = machineID;
+		}
+		return arbi;
+	}
 	public void schedule(Job job)
 	{
 		try {
@@ -152,28 +199,46 @@ public class JobTrackerImpl implements JobTracker{
 				jobID_outputdir.put(job.get_jobId(), job.get_fileOutputPath());
 			System.out.println("Scheduling Job "+job.get_jobId());
 			
-			JobStatus jstatus = new JobStatus();
-			this.job_status.put(job.get_jobId(), jstatus);
-			int ct = 0;
+			
 			Hashtable<String, String> mc_mp = new Hashtable<String, String>();
 			for(Iterator<?> iter = set.iterator(); iter.hasNext();)
 			  {
 			   @SuppressWarnings("rawtypes")
 			   Map.Entry entry = (Map.Entry)iter.next();			   
-			   Integer key = (Integer)entry.getKey();
+			   Integer blockID = (Integer)entry.getKey();
 			   @SuppressWarnings("unchecked")
 			   List<Integer> value = (List<Integer>)entry.getValue();
-			   System.out.println(String.valueOf(key) +" :" + String.valueOf(value.get(0)));
-			   
+			   System.out.println("BlockID:"+blockID.toString());
 			   /* set mapper task */
-			   JobStatus _jstatus = this.job_status.get(job.get_jobId());
-			   String mapper_id = job.get_jobId() + "_m_" + String.valueOf(key);
-			   _jstatus.set_mapper_status(mapper_id, JOB_STATUS.STARTING);
-			   this.job_status.put(job.get_jobId(), _jstatus); 	
-			   
-			   TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+String.valueOf(value.get(0)));
 			  
-			   tt.set_reducer_ct(reducer_ct);
+			   String mapper_id = job.get_jobId() + "_m_" + String.valueOf(blockID);
+			   
+			   boolean allocated = false;
+			   for (Integer machineID: value)
+			   {
+				   System.out.println("MachineID:"+machineID.toString());
+				   int aval_cpus = this.cpu_resource.get(String.valueOf(machineID));
+				   System.out.println("Aval CPU NUM:"+aval_cpus);
+				   if (aval_cpus > 0)
+				   {
+					   System.out.println("Availble CPU, machine: "+machineID);
+					   allocate_mapper(String.valueOf(machineID), mapper_id, String.valueOf(blockID), job, mc_mp);
+					   aval_cpus --;
+					   this.cpu_resource.put(String.valueOf(machineID), aval_cpus);
+					   allocated = true;
+					   break;
+				   }				   
+			   }
+			   if (!allocated)
+			   {
+				   String machineID = pick_idle_machine();
+				   int aval_cpus = this.cpu_resource.get(machineID);
+				   allocate_mapper(machineID, mapper_id, String.valueOf(blockID), job, mc_mp);
+				   aval_cpus --;
+				   this.cpu_resource.put(machineID, aval_cpus);
+				   allocated = true;
+			   }
+			  
 			   /* 
 			    * TaskTracker has to hash key to an ID based on REDUCER_NUM 
 			    * Thus to ensure same key on different mappers will have the same ID
@@ -183,26 +248,13 @@ public class JobTrackerImpl implements JobTracker{
 			    * JobTracker then coordinate which ID goes to which reducer (locality considered).
 			    * 
 			    * */
-			   
-			   mc_mp.put(mapper_id, String.valueOf(value.get(0)));
-			   mapper_machine.put(job.get_jobId(), mc_mp);
-			   tt.start_map(job.get_jobId(), mapper_id, String.valueOf(key), job.get_mapper());
-			   ct += 1;
-			   job.set_mapperStatus(mapper_id, TASK_STATUS.RUNNING);
-			   job.inc_mapperct();
-			   jobID_Job.put(job.get_jobId(), job);
-			   update_preset_mapper(job.get_jobId(), mapper_id, ct);
-			   System.out.println("Job Tracker trying to start map task on "+String.valueOf(value.get(0)));
-			   System.out.println("MapperID:"+mapper_id);
+			   			   
 			  }
-			preset_mapper_ct.put(job.get_jobId(), ct);
+			
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (NotBoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		
 	}
 	
@@ -335,8 +387,8 @@ public class JobTrackerImpl implements JobTracker{
 	@Override
 	public void heartbeat(Msg msg) throws RemoteException {
 		// TODO Auto-generated method stub
-		System.out.println("Got Msg!, TaskType:"+msg.getTask_tp().toString());
-		
+		System.out.println("Got Msg!");
+				
 		if (msg.getTask_tp() == TASK_TP.MAPPER)
 		{
 			if (msg.getTask_stat() == TASK_STATUS.FINISHED)
@@ -360,54 +412,6 @@ public class JobTrackerImpl implements JobTracker{
 					shuffle(jobID, mcID_hashIDs);
 					start_reducer(jobID, this.jobID_outputdir.get(jobID), mcID_hashIDs);
 				}
-				/*
-				 * ret: hashID->size
-				 * */
-				/*
-				HashMap<String, Integer> ret = (HashMap<String, Integer>)msg.getContent();
-				System.out.println("JobID:"+msg.getJob_id()+
-								   ", TaskID:"+ msg.getTask_id()+
-						           ", HashedID->Size:"+ret.toString());
-			    
-				String machineID = msg.getMachine_id();
-			    if (finished_mapper_ct.containsKey(jobID))
-				{
-					int ct = finished_mapper_ct.get(jobID);
-					ct += 1;
-					finished_mapper_ct.put(jobID, ct);
-				    List<String> mapper_ids = finished_mapper_job_task.get(jobID);
-				    mapper_ids.add(taskID);
-					finished_mapper_job_task.put(jobID, mapper_ids);
-					HashMap<String, HashMap<String, Integer>> mc_hash_size = job_mc_hash_size.get(jobID);
-					mc_hash_size.put(machineID, ret);
-					job_mc_hash_size.put(jobID, mc_hash_size);
-				}
-				else
-				{
-					finished_mapper_ct.put(jobID, 1);
-					List<String> mapper_ids = new ArrayList<String>();
-					mapper_ids.add(taskID);
-					finished_mapper_job_task.put(jobID, mapper_ids);
-					HashMap<String, HashMap<String, Integer>> mc_hash_size = new HashMap<String, HashMap<String, Integer>>();
-					mc_hash_size.put(machineID, ret);
-					job_mc_hash_size.put(jobID, mc_hash_size);
-				}
-				if (finished_mapper_ct.get(jobID) == preset_mapper_ct.get(jobID))
-				{
-					/*
-					 * Ensure locality, firstly preset reducers based on the HashID 
-					 * generated by Context, which reports to TaskTracker, 
-					 * and then JobTracker.
-					 * 
-					 * */
-			/*
-					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
-					
-					shuffle(jobID, mcID_hashIDs);
-					
-					start_reducer(jobID, this.jobID_outputdir.get(jobID), mcID_hashIDs);
-			
-				}*/
 				
 			}
 		}
@@ -429,6 +433,13 @@ public class JobTrackerImpl implements JobTracker{
 					
 				}
 			}
+		}
+		
+		if (msg.getMsg_tp() == MSG_TP.HEARTBEAT)
+		{
+			cpu_resource.put(msg.getMachine_id(), msg.get_aval_procs());
+			System.out.println("Putting cpu num into cpu_resources, machineID:"+msg.getMachine_id()
+					+", cpu num:"+msg.get_aval_procs());
 		}
 	}
 	
@@ -565,6 +576,12 @@ public class JobTrackerImpl implements JobTracker{
 		JobTrackerImpl jt = new JobTrackerImpl();
 		String port = args[0];
 		jt.init(port);
+	}
+
+	@Override
+	public void print() throws RemoteException {
+		// TODO Auto-generated method stub
+		System.out.println("This is JobTracker");
 	}
 	
 }

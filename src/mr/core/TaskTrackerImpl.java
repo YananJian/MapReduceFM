@@ -66,11 +66,14 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		try {
 			registry = LocateRegistry.getRegistry(registryHost, registryPort);
 			this.jobTracker = (JobTracker) registry.lookup("JobTracker");
+			
 			this.read_dir = read_dir;
 			this.port = Integer.valueOf(port);
 			this.reducer_ct = reducer_ct;
 			exec = Executors.newCachedThreadPool();
 			exec.submit(this);
+			
+			
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -94,6 +97,13 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	        TaskTracker stub = (TaskTracker) UnicastRemoteObject.exportObject(this, port);
 	        registry.rebind("TaskTracker_"+String.valueOf(this.id), stub);	        
 	        System.out.println("Registered");
+	        Msg hb_msg = new Msg();
+	        Integer aval_procs = new Integer(Runtime.getRuntime().availableProcessors());
+	        System.out.println("Avalible CPU numbers:"+aval_procs.toString());
+			hb_msg.set_aval_procs(aval_procs);
+			hb_msg.setMsg_tp(MSG_TP.HEARTBEAT);
+			hb_msg.setMachine_id(String.valueOf(id));
+			this.heartbeats.offer(hb_msg);
 	       
 	      } catch (Exception e) {
 	        
@@ -295,23 +305,30 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	}
 
 	@Override
-	public Object call() throws Exception {
+	public Object call() throws RemoteException, InterruptedException {
 		// TODO Auto-generated method stub
 		while(true)
 		{
 			Msg msg = this.heartbeats.poll();			
 			if (msg != null)
 			{
-				jobTracker.heartbeat(msg);				
+				System.out.println("Msg tp:"+msg.getMsg_tp()+",CPUs:"+msg.get_aval_procs());
+				jobTracker.heartbeat(msg);
+				
+				jobTracker.print();
+				jobTracker.heartbeat(msg);
+				
+				System.out.println("Sent to JobTracker");
 			}	
 			else
 			{
 				TimeUnit.SECONDS.sleep(1);
-				Msg hb_msg = new Msg();
+				/*Msg hb_msg = new Msg();
 				int aval_procs = Runtime.getRuntime().availableProcessors();
 				hb_msg.set_aval_procs(aval_procs);
 				hb_msg.setMsg_tp(MSG_TP.HEARTBEAT);
-				this.heartbeats.add(hb_msg);
+				hb_msg.setMachine_id(String.valueOf(id));
+				this.heartbeats.add(hb_msg);*/
 			}
 			
 		}
