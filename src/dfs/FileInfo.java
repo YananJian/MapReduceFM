@@ -27,8 +27,8 @@ public class FileInfo
   }
 
   /**
-   * Get the file name
-   * @return file name
+   * Get the filename
+   * @return filename
    */
   public String getFileName()
     { return filename; }
@@ -41,19 +41,23 @@ public class FileInfo
     { return nReplicas; }
 
   /**
-   * Get the block ids
+   * Get the block IDs
    * @return block ids
    */
   public List<Integer> getBlockIds()
     { return blockIds; }
 
   /**
-   * Add a block id to the list
+   * Add a block ID to the list
    * @param blockId block id
    */
   public void addBlockId(int blockId)
     { blockIds.add(blockId); }
 
+  /**
+   * Translate file info to fsImage format
+   * @return string representint the info in fsImage format
+   */
   public String toFsImage()
   {
     StringBuilder sb = new StringBuilder();
@@ -64,6 +68,10 @@ public class FileInfo
     return sb.toString();
   }
 
+  /**
+   * Translate file info to human-readable string
+   * @return human-readable string representing the info
+   */
   @Override
   public String toString()
     { return "filename: " + filename + "\t#replicas: " + nReplicas + "\tblock id: " + blockIds.toString(); }

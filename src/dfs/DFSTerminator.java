@@ -5,12 +5,23 @@ import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 
+/**
+ * Terminate the whole DFS
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class DFSTerminator
 {
   private String registryHost;
   private int registryPort;
   private String fsImageDir;
 
+  /**
+   * Constructor
+   * @param registryHost registry's host
+   * @param registryPort registry's port number
+   * @param fsImageDir directory to fsImage
+   */
   public DFSTerminator(String registryHost, int registryPort, String fsImageDir)
   {
     this.registryHost = registryHost;
@@ -18,6 +29,9 @@ public class DFSTerminator
     this.fsImageDir = fsImageDir;
   }
 
+  /**
+   * Terminate the whole DFS through RMI call
+   */
   public void terminate() throws NotBoundException, RemoteException
   {
     Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
@@ -25,6 +39,10 @@ public class DFSTerminator
     namenode.terminate(fsImageDir);
   }
 
+  /**
+   * Main method of DFSTerminator
+   * @param args command-line arguments
+   */
   public static void main(String[] args)
   {
     String registryHost = args[0];

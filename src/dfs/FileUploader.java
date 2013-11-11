@@ -8,6 +8,11 @@ import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+/**
+ * Facility to upload a file to DFS
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class FileUploader
 {
   private String path;
@@ -16,6 +21,14 @@ public class FileUploader
   private String registryHost;
   private int registryPort;
 
+  /**
+   * Constructor
+   * @param path local path to store the file
+   * @param filename filename on dfs
+   * @param nReplicas replication factor
+   * @param registryHost registry's host
+   * @param registryPort registry's port number
+   */
   public FileUploader(String path, String filename, int nReplicas, String registryHost, int registryPort)
   {
     this.path = path;
@@ -25,6 +38,12 @@ public class FileUploader
     this.registryPort = registryPort;
   }
 
+  /**
+   * Upload a file from local path to dfs using RMI calls
+   * @throws IOException
+   * @throws NotBoundException
+   * @throws RemoteException
+   */
   public void upload() throws IOException, RemoteException, NotBoundException
   {
     /* create metadata for namenode */
@@ -68,6 +87,10 @@ public class FileUploader
     br.close();
   }
 
+  /**
+   * Main method of FileUploader
+   * @param args command-line arguments
+   */
   public static void main(String[] args)
   {
     FileUploader uploader = null;
