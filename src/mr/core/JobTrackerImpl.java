@@ -427,9 +427,14 @@ public class JobTrackerImpl implements JobTracker{
 		}
 	}
 	
-	public void desc_job(String jobID)
+	public String desc_job(String jobID)
 	{
-		
+		return "";
+	}
+	
+	public String desc_jobs()
+	{
+		return "";
 	}
 	
 	public void terminate_job(String jobID)
