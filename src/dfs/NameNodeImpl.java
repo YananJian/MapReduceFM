@@ -67,6 +67,7 @@ public class NameNodeImpl implements NameNode
    * @param datanode stub of datanode
    * @throws RemoteException
    */
+  @Override
   public void register(int id, DataNode datanode) throws RemoteException
   {
     if (terminated)
@@ -84,6 +85,7 @@ public class NameNodeImpl implements NameNode
    * @return stub of datanode
    * @throws RemoteException
    */
+  @Override
   public DataNode getDataNode(int id) throws RemoteException
   {
     if (terminated)
@@ -98,6 +100,7 @@ public class NameNodeImpl implements NameNode
    * @return actual replication factor
    * @throws RemoteException
    */
+  @Override
   public int createFile(String filename, int nReplicas) throws RemoteException
   {
     if (terminated)
@@ -117,6 +120,7 @@ public class NameNodeImpl implements NameNode
    * @return default block size
    * @throws RemoteException
    */
+  @Override
   public int getBlockSize() throws RemoteException
   {
     if (terminated)
@@ -130,6 +134,7 @@ public class NameNodeImpl implements NameNode
    * @return block id for the next block
    * @throws RemoteException
    */
+  @Override
   public int getNextBlockId(String filename) throws RemoteException
   {
     if (terminated)
@@ -148,6 +153,7 @@ public class NameNodeImpl implements NameNode
    * @return the next datanode chosen
    * @throws RemoteException
    */
+  @Override
   public DataNode allocateBlock() throws RemoteException
   {
     if (terminated)
@@ -167,6 +173,7 @@ public class NameNodeImpl implements NameNode
    * @param blockId block id
    * @throws RemoteException
    */
+  @Override
   public void commitBlockAllocation(int dataNodeId, String filename, int blockId) throws RemoteException
   {
     if (terminated)
@@ -181,6 +188,7 @@ public class NameNodeImpl implements NameNode
    * @return a map from block id to datanode ids
    * @throws RemoteException
    */
+  @Override
   public Map<Integer, List<Integer>> getAllBlocks(String filename) throws RemoteException
   {
     if (terminated)
@@ -198,6 +206,7 @@ public class NameNodeImpl implements NameNode
    * @return human-readable string representing the dfs
    * @throws RemoteException
    */
+  @Override
   public String describeDFS() throws RemoteException
   {
     if (terminated)
@@ -224,6 +233,7 @@ public class NameNodeImpl implements NameNode
    * @param fsImageDir directory to fsImage
    * @throws RemoteException
    */
+  @Override
   public void terminate(String fsImageDir) throws RemoteException
   {
     try {
