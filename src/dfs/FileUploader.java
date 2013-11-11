@@ -15,7 +15,7 @@ import java.rmi.registry.Registry;
  */
 public class FileUploader
 {
-  private String path;
+  private BufferedReader br;
   private String filename;
   private int nReplicas;
   private String registryHost;
@@ -29,9 +29,26 @@ public class FileUploader
    * @param registryHost registry's host
    * @param registryPort registry's port number
    */
-  public FileUploader(String path, String filename, int nReplicas, String registryHost, int registryPort)
+  public FileUploader(String path, String filename, int nReplicas, String registryHost, int registryPort) throws IOException
   {
-    this.path = path;
+    this.br = new BufferedReader(new FileReader(path));
+    this.filename = filename;
+    this.nReplicas = nReplicas;
+    this.registryHost = registryHost;
+    this.registryPort = registryPort;
+  }
+
+  /**
+   * Constructor
+   * @param br BufferedReader for input
+   * @param filename filename on dfs
+   * @param nReplicas replication factor
+   * @param registryHost registry's host
+   * @param registryPort registry's port number
+   */
+  public FileUploader(BufferedReader br, String filename, int nReplicas, String registryHost, int registryPort)
+  {
+    this.br = br;
     this.filename = filename;
     this.nReplicas = nReplicas;
     this.registryHost = registryHost;
@@ -54,7 +71,6 @@ public class FileUploader
     /* upload content to datanodes */
     int blockSize = namenode.getBlockSize();
     int blockId = namenode.getNextBlockId(filename);
-    BufferedReader br = new BufferedReader(new FileReader(path));
     StringBuilder content = new StringBuilder();
     String line = "";
     while (line != null) {
