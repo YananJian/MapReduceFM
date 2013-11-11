@@ -14,6 +14,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import mr.Job;
@@ -29,6 +30,7 @@ public class JobTrackerImpl implements JobTracker{
 	String registryHost = Config.MASTER_IP;
 	int registryPort = Config.MASTER_PORT;
 	NameNode namenode = null;
+	int reducer_ct = Config.REDUCER_NUM;
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
 	/*
 	 * mapper_machine: pair of job, mapperID and machineID
@@ -54,17 +56,12 @@ public class JobTrackerImpl implements JobTracker{
 	HashMap<String, Job> jobID_Job = new HashMap<String, Job>();
 	Registry registry = null;
 	
-	public JobTrackerImpl()
-	{
-		
-	}
 	
-	public void init()
+	public void init(String port)
 	{
 		try {
 	        registry = LocateRegistry.getRegistry(registryHost, registryPort);
-	        
-	        JobTracker stub = (JobTracker) UnicastRemoteObject.exportObject(this, 0);
+	        JobTracker stub = (JobTracker) UnicastRemoteObject.exportObject(this, Integer.valueOf(port));
 	        registry.rebind("JobTracker", stub);
 	        this.namenode = (NameNode) registry.lookup("NameNode");
 	        
@@ -174,7 +171,7 @@ public class JobTrackerImpl implements JobTracker{
 			   
 			   TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+String.valueOf(value.get(0)));
 			  
-			   tt.set_reducer_ct(Config.REDUCER_NUM);
+			   tt.set_reducer_ct(reducer_ct);
 			   /* 
 			    * TaskTracker has to hash key to an ID based on REDUCER_NUM 
 			    * Thus to ensure same key on different mappers will have the same ID
@@ -189,6 +186,9 @@ public class JobTrackerImpl implements JobTracker{
 			   mapper_machine.put(job.get_jobId(), mc_mp);
 			   tt.start_map(job.get_jobId(), mapper_id, String.valueOf(key), job.get_mapper());
 			   ct += 1;
+			   job.set_mapperStatus(mapper_id, TASK_STATUS.RUNNING);
+			   job.inc_mapperct();
+			   jobID_Job.put(job.get_jobId(), job);
 			   update_preset_mapper(job.get_jobId(), mapper_id, ct);
 			   System.out.println("Job Tracker trying to start map task on "+String.valueOf(value.get(0)));
 			   System.out.println("MapperID:"+mapper_id);
@@ -202,13 +202,6 @@ public class JobTrackerImpl implements JobTracker{
 			e.printStackTrace();
 		}
 		
-	}
-	
-	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		JobTrackerImpl jt = new JobTrackerImpl();
-		jt.init();
 	}
 	
 	public Set get_mapper_machineIDs(String jobID)
@@ -308,20 +301,64 @@ public class JobTrackerImpl implements JobTracker{
 		}
 	}
 	
+	public boolean is_task_finished(String jobID, TASK_TP tp)
+	{
+		Job job = jobID_Job.get(jobID);
+		HashMap<String,TASK_STATUS> task_status = null;
+		if (tp == TASK_TP.MAPPER)
+			task_status = job.get_mapperStatus();
+		else if (tp == TASK_TP.REDUCER)
+			task_status = job.get_reducerStatus();
+		Iterator iter = task_status.entrySet().iterator();
+		int ct = 0;
+		while(iter.hasNext())
+		{
+			Entry pairs = (Entry) iter.next();
+			String mapperID = (String)pairs.getKey();
+			TASK_STATUS status = (TASK_STATUS)pairs.getValue();
+			if (status == TASK_STATUS.RUNNING)
+			{
+				System.out.println("Task "+mapperID+" is running");
+				return false;
+			}
+			else if (status == TASK_STATUS.FINISHED)
+				System.out.println("Task "+mapperID+" is finished");
+		}
+		return true;
+	}
+	
 	@Override
 	public void heartbeat(Msg msg) throws RemoteException {
 		// TODO Auto-generated method stub
 		System.out.println("Got Msg!, TaskType:"+msg.getTask_tp().toString());
 		
 		if (msg.getTask_tp() == TASK_TP.MAPPER)
+		{
 			if (msg.getTask_stat() == TASK_STATUS.FINISHED)
+			
 			{
 				String jobID = msg.getJob_id();
 				String taskID = msg.getTask_id();
+				String machineID = msg.getMachine_id();
 				System.out.println("Mapper Finished!");	
+				Job job = jobID_Job.get(jobID);
+				job.set_mapperStatus(taskID, TASK_STATUS.FINISHED);
+				System.out.println("Job Finished, writing to Hash, taskID:"+taskID);
+				
+				HashMap<String, Integer> ret = (HashMap<String, Integer>)msg.getContent();
+				HashMap<String, HashMap<String, Integer>> mc_hash_size = new HashMap<String, HashMap<String, Integer>>();
+				mc_hash_size.put(machineID, ret);
+				job_mc_hash_size.put(jobID, mc_hash_size);
+				if (is_task_finished(jobID, TASK_TP.MAPPER))
+				{
+					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
+					shuffle(jobID, mcID_hashIDs);
+					start_reducer(jobID, this.jobID_outputdir.get(jobID), mcID_hashIDs);
+				}
 				/*
 				 * ret: hashID->size
 				 * */
+				/*
 				HashMap<String, Integer> ret = (HashMap<String, Integer>)msg.getContent();
 				System.out.println("JobID:"+msg.getJob_id()+
 								   ", TaskID:"+ msg.getTask_id()+
@@ -358,13 +395,53 @@ public class JobTrackerImpl implements JobTracker{
 					 * and then JobTracker.
 					 * 
 					 * */
+			/*
 					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
 					
 					shuffle(jobID, mcID_hashIDs);
 					
 					start_reducer(jobID, this.jobID_outputdir.get(jobID), mcID_hashIDs);
-				}
+			
+				}*/
 				
 			}
+		}
+		else if (msg.getTask_tp() == TASK_TP.REDUCER)
+		{
+			if (msg.getTask_stat() == TASK_STATUS.FINISHED)
+			{
+				String jobID = msg.getJob_id();
+				String taskID = msg.getTask_id();
+				System.out.println("Reducer Finished!");
+				String machineID = msg.getMachine_id();
+				Job job = jobID_Job.get(jobID);
+				job.set_reducerStatus(taskID, TASK_STATUS.FINISHED);
+				if (is_task_finished(jobID, TASK_TP.REDUCER))
+				{
+					System.out.println("All Reducer finished");
+					JobStatus jstatus = this.job_status.get(jobID);
+					jstatus.set_job_stat(JOB_STATUS.FINISHED);
+					
+				}
+			}
+		}
 	}
+	
+	public void desc_job(String jobID)
+	{
+		
+	}
+	
+	public void terminate_job(String jobID)
+	{
+		
+	}
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		JobTrackerImpl jt = new JobTrackerImpl();
+		String port = args[0];
+		jt.init(port);
+	}
+	
 }

@@ -56,15 +56,18 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	String read_dir = null;
 	ExecutorService exec = null;
 	int reducer_ct = 0;
+	int port = 0;
 	//Queue<Msg> heartbeats = new LinkedList<Msg>();
 	LinkedBlockingQueue<Msg> heartbeats = new LinkedBlockingQueue<Msg>();
-	public TaskTrackerImpl(int id, String read_dir)
+	public TaskTrackerImpl(int id, String read_dir, String port, int reducer_ct)
 	{
 		this.id = id;		
 		try {
 			registry = LocateRegistry.getRegistry(registryHost, registryPort);
 			this.jobTracker = (JobTracker) registry.lookup("JobTracker");
 			this.read_dir = read_dir;
+			this.port = Integer.valueOf(port);
+			this.reducer_ct = reducer_ct;
 			exec = Executors.newCachedThreadPool();
 			exec.submit(this);
 		} catch (RemoteException e) {
@@ -86,7 +89,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	public void init()
 	{
 		try {	        	        
-	        TaskTracker stub = (TaskTracker) UnicastRemoteObject.exportObject(this, 0);
+	        TaskTracker stub = (TaskTracker) UnicastRemoteObject.exportObject(this, port);
 	        registry.rebind("TaskTracker_"+String.valueOf(this.id), stub);	        
 	        System.out.println("Registered");
 	       
@@ -206,7 +209,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			msg.setMachine_id(String.valueOf(id));
 			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
 			this.heartbeats.offer(msg);
-			//this.heartbeats.add(msg);
+			
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -225,6 +228,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_taskTP(TASK_TP.REDUCER);
 		task.set_reducer_cls(reducer);
 		task.set_outputdir(write_path);
+		task.set_reducerCT(reducer_ct);
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
 		String ret_s = "";
@@ -244,24 +248,40 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			}
 			StringReader strr = new StringReader(ret_s);
 			BufferedReader br = new BufferedReader(strr);
-			//FileUploader uploader = new FileUploader(path, write_path+'/'+ , 0, registryHost, registryPort);
+			FileUploader uploader = new FileUploader(br, write_path+'/'+reducer_id , 0, registryHost, registryPort);
+			uploader.upload();
+			
+			/*
+			 * After executing task, wrap the return value into Heartbeat Msg.
+			 * Send Heartbeat to JobTracker.
+			 * Per Msg per Task.
+			 * 
+			 * */
+			Msg msg = new Msg();
+			msg.setJob_id(job_id);
+			msg.setTask_id(reducer_id);
+			msg.setTask_tp(TASK_TP.REDUCER);
+			msg.setTask_stat(TASK_STATUS.FINISHED);			
+			msg.setMachine_id(String.valueOf(id));
+			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
+			this.heartbeats.offer(msg);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ExecutionException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		System.out.println("Starting Reducer in TaskTracker, output_dir:"+write_path);
-	}
-	
-	public static void main(String[] args) {
 		
-		// TaskTracker ID should be the same with the id of the DataNode
-		String taskNodeID = args[0];
-		String dir = args[1];
-		TaskTrackerImpl tt = new TaskTrackerImpl(Integer.parseInt(taskNodeID), dir);
-		tt.init();
 	}
 
 	@Override
@@ -269,8 +289,6 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		// TODO Auto-generated method stub
 		this.reducer_ct = ct;
 	}
-
-
 
 	@Override
 	public Object call() throws Exception {
@@ -289,5 +307,16 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			
 		}
 		
+	}
+	
+	public static void main(String[] args) {
+		
+		// TaskTracker ID should be the same with the id of the DataNode
+		String taskNodeID = args[0];
+		String dir = args[1];
+		String port = args[2];
+		int reducer_ct = Integer.valueOf(args[3]);
+		TaskTrackerImpl tt = new TaskTrackerImpl(Integer.parseInt(taskNodeID), dir, port, reducer_ct);
+		tt.init();
 	}
 }

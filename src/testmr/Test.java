@@ -37,6 +37,7 @@ public class Test {
 			System.out.println("-----result: "+key.getVal() + "\t"+String.valueOf(sum));
 		}
 	}
+	
 	public static void main(String args[])
 	{
 		//Job job = new Job();

@@ -109,7 +109,7 @@ public class Task implements Callable {
 				//System.out.println("Input to reducer, dir:"+input_dir);
 				reducer_cls.init(input_dir);
 				reducer_cls.bootstrap();
-				
+				System.out.println("After bootstrap");
 				Record record = null;
 				while ((record = reducer_cls.getNext()) != null) {
 					  TextWritable key = (TextWritable) record.getKey();

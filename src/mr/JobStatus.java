@@ -13,6 +13,17 @@ public class JobStatus {
 																<String, Constants.JOB_STATUS>();
     Hashtable<String, Constants.JOB_STATUS> reducer_Status = new Hashtable
 																<String, Constants.JOB_STATUS>();															
+	
+	Constants.JOB_STATUS job_stat = null;				
+	
+	public void set_job_stat(Constants.JOB_STATUS stat)
+	{
+		this.job_stat = stat;
+	}
+	public Constants.JOB_STATUS get_job_stat()
+	{
+		return this.job_stat;
+	}
 	public void set_mapper_progress(String mapper_id, Float progress)
 	{
 		this.mapper_Progress.put(mapper_id, progress);
