@@ -88,11 +88,6 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		System.out.println("Task "+taskID+" terminated");
 	}
 	
-	public void update_task_status()
-	{
-		
-	}
-	
 	public void init()
 	{
 		try {	        	        
@@ -311,7 +306,12 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			}	
 			else
 			{
-				TimeUnit.SECONDS.sleep(1);				
+				TimeUnit.SECONDS.sleep(1);
+				Msg hb_msg = new Msg();
+				int aval_procs = Runtime.getRuntime().availableProcessors();
+				hb_msg.set_aval_procs(aval_procs);
+				hb_msg.setMsg_tp(MSG_TP.HEARTBEAT);
+				this.heartbeats.add(hb_msg);
 			}
 			
 		}

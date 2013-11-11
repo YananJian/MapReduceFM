@@ -151,6 +151,7 @@ public class JobTrackerImpl implements JobTracker{
 			if (job.get_fileOutputPath() != null)
 				jobID_outputdir.put(job.get_jobId(), job.get_fileOutputPath());
 			System.out.println("Scheduling Job "+job.get_jobId());
+			
 			JobStatus jstatus = new JobStatus();
 			this.job_status.put(job.get_jobId(), jstatus);
 			int ct = 0;
@@ -477,20 +478,9 @@ public class JobTrackerImpl implements JobTracker{
 
 	}
 
-	public void terminate_job(String jobID)
-	{
-		Job job = jobID_Job.get(jobID);
-		HashMap<String,TASK_STATUS> mapper_status = null;
-		HashMap<String,TASK_STATUS> reducer_status = null;
-		
-		mapper_status = job.get_mapperStatus();
-		
-		reducer_status = job.get_reducerStatus();
-		/*
-		 * terminating mappers
-		 * 
-		 * */
-		Iterator miter = mapper_status.entrySet().iterator();
+    private void terminate_mappers(String jobID, HashMap<String,TASK_STATUS> mapper_status)
+    {
+    	Iterator miter = mapper_status.entrySet().iterator();
 		while(miter.hasNext())
 		{
 			Entry pairs = (Entry) miter.next();
@@ -520,10 +510,14 @@ public class JobTrackerImpl implements JobTracker{
 			else if (status == TASK_STATUS.FINISHED)
 				System.out.println("Task "+mapperID+" is finished");
 		}
-		Iterator riter = reducer_status.entrySet().iterator();
+    	
+    }
+    private void terminate_reducers(String jobID, HashMap<String,TASK_STATUS> reducer_status)
+    {
+    	Iterator riter = reducer_status.entrySet().iterator();
 		while(riter.hasNext())
 		{
-			Entry pairs = (Entry) miter.next();
+			Entry pairs = (Entry) riter.next();
 			String reducerID = (String)pairs.getKey();
 			String machineID = reducer_machine.get(jobID).get(reducerID);
 			
@@ -550,6 +544,20 @@ public class JobTrackerImpl implements JobTracker{
 			else if (status == TASK_STATUS.FINISHED)
 				System.out.println("Task "+reducerID+" is finished");
 		}
+    }
+    
+	public void terminate_job(String jobID)
+	{
+		Job job = jobID_Job.get(jobID);
+		HashMap<String,TASK_STATUS> mapper_status = null;
+		HashMap<String,TASK_STATUS> reducer_status = null;
+		
+		mapper_status = job.get_mapperStatus();
+		
+		reducer_status = job.get_reducerStatus();
+		terminate_mappers(jobID, mapper_status);
+		terminate_reducers(jobID, reducer_status);
+		
 	}
 	
 	public static void main(String[] args) {
