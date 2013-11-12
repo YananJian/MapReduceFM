@@ -9,7 +9,7 @@ import mr.Reducer;
 
 public interface TaskTracker extends Remote, java.io.Serializable {
 	public void set_reducer_ct(int ct) throws RemoteException;
-	public void start_map(String job_id, String mapper_id, String block_id, Class<? extends Mapper> class1) throws RemoteException;
+	public void start_map(String job_id, String mapper_id, String block_id, String read_from_machine, Class<? extends Mapper> class1) throws RemoteException;
 	public void start_reducer(String job_id, String reducer_id, String write_path, Class<? extends Reducer> reducer) throws RemoteException;
 	public void writestr(String path, String content) throws RemoteException;
 	public String readstr(String path, String name) throws RemoteException;

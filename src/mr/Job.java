@@ -171,6 +171,7 @@ public class Job implements java.io.Serializable{
 		// Scheduler assign task to Compute Nodes
 		
 		fu.upload();
+		System.out.println("After upload");
 			
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block

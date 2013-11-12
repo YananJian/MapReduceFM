@@ -128,37 +128,31 @@ public class JobTrackerImpl implements JobTracker{
 		this.job_status.put(job_id, jstatus);
 	}
 	
-	/*private void update_preset_mapper(String jobID, String taskID, int ct)
-	{	
-		preset_mapper_ct.put(jobID, ct);
-		List<String> mapper_ids = preset_mapper_job_task.get(jobID);
-		if (mapper_ids == null)
-		{
-			List<String> tmp = new ArrayList<String>();
-			preset_mapper_job_task.put(jobID, tmp);
-		}
-		else
-		{
-			mapper_ids.add(taskID);
-			preset_mapper_job_task.put(jobID, mapper_ids);
-		}				
-	}*/
-	
-	public void allocate_mapper(String machineID, String mapper_id, String blockID, Job job, Hashtable<String, String> mc_mp)
+	public void allocate_mapper(String machineID, String mapper_id, String blockID, String read_from_machine, Job job, Hashtable<String, String> mc_mp)
 	{
 		TaskTracker tt;
 		try {
 			tt = (TaskTracker)registry.lookup("TaskTracker_"+machineID);
+			 /* 
+			    * TaskTracker has to hash key to an ID based on REDUCER_NUM 
+			    * Thus to ensure same key on different mappers will have the same ID
+			    * So finally same key will go to the same reducer.
+			    * After Context iterated over all the keys, (Thus after the first stage of partition)
+			    * push the {key:id} hashmap to TaskTracker, TaskTracker then pass it to JobTracker.
+			    * JobTracker then coordinate which ID goes to which reducer (locality considered).
+			    * 
+			    * */
+			   			
 			tt.set_reducer_ct(reducer_ct);
 			mc_mp.put(mapper_id, machineID);
 			mapper_machine.put(job.get_jobId(), mc_mp);
 			System.out.println("prepare to start mapper");
-			tt.start_map(job.get_jobId(), mapper_id, blockID, job.get_mapper());
+			tt.start_map(job.get_jobId(), mapper_id, blockID, read_from_machine, job.get_mapper());
 			
 			job.set_mapperStatus(mapper_id, TASK_STATUS.RUNNING);
 			job.inc_mapperct();
 			jobID_Job.put(job.get_jobId(), job);
-			//update_preset_mapper(job.get_jobId(), mapper_id, ct);
+			
 			System.out.println("Job Tracker trying to start map task on "+String.valueOf(machineID)
 					   												     +", mapperID:"+mapper_id);
 		} catch (AccessException e) {
@@ -222,7 +216,8 @@ public class JobTrackerImpl implements JobTracker{
 				   if (aval_cpus > 0)
 				   {
 					   System.out.println("Availble CPU, machine: "+machineID);
-					   allocate_mapper(String.valueOf(machineID), mapper_id, String.valueOf(blockID), job, mc_mp);
+					   String read_from_machine = String.valueOf(machineID);
+					   allocate_mapper(String.valueOf(machineID), mapper_id, String.valueOf(blockID), read_from_machine, job, mc_mp);
 					   aval_cpus --;
 					   this.cpu_resource.put(String.valueOf(machineID), aval_cpus);
 					   allocated = true;
@@ -233,22 +228,12 @@ public class JobTrackerImpl implements JobTracker{
 			   {
 				   String machineID = pick_idle_machine();
 				   int aval_cpus = this.cpu_resource.get(machineID);
-				   allocate_mapper(machineID, mapper_id, String.valueOf(blockID), job, mc_mp);
+				   String read_from_machine = String.valueOf(value.get(0));
+				   allocate_mapper(machineID, mapper_id, String.valueOf(blockID), read_from_machine, job, mc_mp);
 				   aval_cpus --;
 				   this.cpu_resource.put(machineID, aval_cpus);
 				   allocated = true;
-			   }
-			  
-			   /* 
-			    * TaskTracker has to hash key to an ID based on REDUCER_NUM 
-			    * Thus to ensure same key on different mappers will have the same ID
-			    * So finally same key will go to the same reducer.
-			    * After Context iterated over all the keys, (Thus after the first stage of partition)
-			    * push the {key:id} hashmap to TaskTracker, TaskTracker then pass it to JobTracker.
-			    * JobTracker then coordinate which ID goes to which reducer (locality considered).
-			    * 
-			    * */
-			   			   
+			   }		     
 			  }
 			
 		} catch (RemoteException e) {
@@ -400,7 +385,9 @@ public class JobTrackerImpl implements JobTracker{
 				System.out.println("Mapper Finished!");	
 				Job job = jobID_Job.get(jobID);
 				job.set_mapperStatus(taskID, TASK_STATUS.FINISHED);
-				System.out.println("Job Finished, writing to Hash, taskID:"+taskID);
+				int aval_cpus = this.cpu_resource.get(machineID);
+				aval_cpus++;
+				cpu_resource.put(machineID, aval_cpus);
 				
 				HashMap<String, Integer> ret = (HashMap<String, Integer>)msg.getContent();
 				HashMap<String, HashMap<String, Integer>> mc_hash_size = new HashMap<String, HashMap<String, Integer>>();
@@ -424,6 +411,9 @@ public class JobTrackerImpl implements JobTracker{
 				System.out.println("Reducer Finished!");
 				String machineID = msg.getMachine_id();
 				Job job = jobID_Job.get(jobID);
+				int aval_cpus = this.cpu_resource.get(machineID);
+				aval_cpus++;
+				cpu_resource.put(machineID, aval_cpus);
 				job.set_reducerStatus(taskID, TASK_STATUS.FINISHED);
 				if (is_task_finished(jobID, TASK_TP.REDUCER))
 				{

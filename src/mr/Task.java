@@ -4,11 +4,19 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.*;
 
+import conf.Config;
+import dfs.DataNode;
+import dfs.NameNode;
 import mr.common.Constants.TASK_TP;
 import mr.io.IntWritable;
 import mr.io.TextWritable;
@@ -25,12 +33,35 @@ public class Task implements Callable {
 	int reducer_ct = 0;
 	TASK_TP type = null;
 	String output_dir = null;
+	String registryHost = Config.MASTER_IP;
+	int registryPort = Config.MASTER_PORT;
+	NameNode namenode = null;
+	String read_from_machine = null;
+	Registry registry = null;
 	
 	public Task(String job_id, String task_id) {
 		this.job_id = job_id;
-		this.task_id = task_id;		
+		this.task_id = task_id;	
+		
+		try {
+			registry = LocateRegistry.getRegistry(registryHost, registryPort);
+			namenode = (NameNode) registry.lookup("NameNode");
+			
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
 	}
-
+	
+	public void set_read_from_machine(String machineID)
+	{
+		this.read_from_machine = machineID;	
+	}
+	
 	public void set_blockID(String bID)
 	{
 		this.block_id = bID;
@@ -78,12 +109,17 @@ public class Task implements Callable {
 				System.out.println("Executing task, job id:" + job_id
 					+ ", mapper_id:" + task_id);
 				/* read from block */
-				BufferedReader br = new BufferedReader(new FileReader(read_dir
-														+ "/" + block_id));
-				String line = "";
-			
-				while ((line = br.readLine()) != null) 
+				//DataNode datanode = (DataNode) registry.lookup("DataNode_"+read_from_machine);
+				DataNode dNode = namenode.getDataNode(Integer.parseInt(read_from_machine));
+				String content = dNode.getBlock(Integer.valueOf(block_id));
+				//BufferedReader br = new BufferedReader(new FileReader(read_dir
+				//										+ "/" + block_id));
+				//String line = "";
+				String[] lines = content.split("\n");
+				//while ((line = br.readLine()) != null) 
+				for (int i= 0; i< lines.length; i++)
 				{
+					String line = lines[i];
 					TextWritable k1 = new TextWritable();
 					TextWritable v1 = new TextWritable();
 					String k1_val = line;

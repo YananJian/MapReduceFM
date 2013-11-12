@@ -191,7 +191,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	}
 	
 	@Override
-	public void start_map(String job_id, String mapper_id, String block_id, Class<? extends Mapper> mapper) {
+	public void start_map(String job_id, String mapper_id, String block_id, String read_from_machine, Class<? extends Mapper> mapper) {
 		// TODO Auto-generated method stub
 		//mapper.map(key, val, context);
 		Task task = new Task(job_id, mapper_id);
@@ -202,6 +202,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_read_dir(read_dir);
 		task.set_mapper_cls(mapper);
 		task.set_machineID(String.valueOf(id));
+		task.set_read_from_machine(read_from_machine);
 		Future f1 = exec.submit(task);
 		taskID_exec.put(mapper_id, f1);
 		try {
