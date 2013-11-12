@@ -9,7 +9,7 @@ public class Constants {
 		};
 	
 	public enum JOB_STATUS{
-		STARTING, STARTED, TERMINATED, FINISHED
+		RUNNING, TERMINATED, FINISHED
 	}
 	
 	public enum TASK_STATUS{

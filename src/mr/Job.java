@@ -37,6 +37,7 @@ public class Job implements java.io.Serializable{
 	int reducer_ct = 0;
 	HashMap<String, TASK_STATUS> mapper_status = new HashMap<String, TASK_STATUS>();
 	HashMap<String, TASK_STATUS> reducer_status = new HashMap<String, TASK_STATUS>();
+	JOB_STATUS stat = null;
 	
 	public Job()
 	{
@@ -53,6 +54,16 @@ public class Job implements java.io.Serializable{
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public void set_jobStatus(JOB_STATUS stat)
+	{
+		this.stat = stat;
+	}
+	
+	public JOB_STATUS get_jobStatus()
+	{
+		return this.stat;
 	}
 	
 	public void set_mapperStatus(String mapper_id, TASK_STATUS status)
@@ -143,9 +154,15 @@ public class Job implements java.io.Serializable{
 	}
 	
 	
-	public void submit() throws RemoteException
+	public void submit()
 	{
-		jobTracker.schedule(this);
+		
+		try {
+			jobTracker.schedule(this);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	

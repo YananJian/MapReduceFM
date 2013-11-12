@@ -49,12 +49,9 @@ public class Test {
 		job.set_fileOutputPath(output_path);
 		job.set_mapper(TestMapper.class);
 		job.set_reducer(TestReducer.class);
-		try {
-			job.submit();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	
+		job.submit();
+		
 	}
 	
 }

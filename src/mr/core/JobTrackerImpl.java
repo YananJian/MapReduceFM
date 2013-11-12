@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,6 +40,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
 	/*
 	 * mapper_machine: pair of job, mapperID and machineID
+	 * running_jobs: pair of machineID, list of running jobIDs
 	 * */
 	Hashtable<String, Hashtable<String, String>> mapper_machine = new Hashtable<String, Hashtable<String, String>>();
 	Hashtable<String, Hashtable<String, String>> reducer_machine = new Hashtable<String, Hashtable<String, String>> ();
@@ -48,6 +50,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	HashMap<String, String> jobID_outputdir = new HashMap<String, String>();
 	HashMap<String, Job> jobID_Job = new HashMap<String, Job>();
 	HashMap<String, TaskTracker> alive_tasktrackers = new HashMap<String, TaskTracker>();
+	HashMap<String, Set<String>> running_jobs = new HashMap<String, Set<String>>();
 	HashMap<String, Integer> cpu_resource = new HashMap<String, Integer>();
 	Registry mr_registry = null;
 	Registry dfs_registry = null;
@@ -167,6 +170,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		{
 			Entry entry = (Entry) iter.next();
 			String machineID = (String)entry.getKey();
+			if (!this.alive_tasktrackers.containsKey(machineID))
+				continue;
 			Integer res = (Integer) entry.getValue();
 			if (res > 0)
 				return machineID;
@@ -178,6 +183,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	{
 		try {
 			Map<Integer, List<Integer>> mappings = this.namenode.getAllBlocks(job.get_fileName());
+			job.set_jobStatus(JOB_STATUS.RUNNING);
+					
 			jobID_Job.put(job.get_jobId(), job);
 			Set<?> set = mappings.entrySet();
 			if (job.get_fileOutputPath() != null)
@@ -201,6 +208,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 			   boolean allocated = false;
 			   for (Integer machineID: value)
 			   {
+				   if (!this.alive_tasktrackers.containsKey(String.valueOf(machineID)))
+					   continue;
 				   System.out.println("MachineID:"+machineID.toString());
 				   int aval_cpus = this.cpu_resource.get(String.valueOf(machineID));
 				   System.out.println("Aval CPU NUM:"+aval_cpus);
@@ -212,18 +221,47 @@ public class JobTrackerImpl implements JobTracker, Callable{
 					   aval_cpus --;
 					   this.cpu_resource.put(String.valueOf(machineID), aval_cpus);
 					   allocated = true;
+					   Set<String> running_jobIDs = running_jobs.get(machineID);
+					   if (running_jobIDs == null)
+					   {
+						   running_jobIDs = new HashSet<String>();
+						   running_jobIDs.add(job.get_jobId());
+						   running_jobs.put(String.valueOf(machineID), running_jobIDs);
+					   }
+					   else
+					   {
+						   running_jobIDs.add(job.get_jobId());
+					   }
 					   break;
 				   }				   
 			   }
 			   if (!allocated)
 			   {
 				   String machineID = pick_idle_machine();
+				   if (!machineID.equals(""))
+				   {	   
 				   int aval_cpus = this.cpu_resource.get(machineID);
 				   String read_from_machine = String.valueOf(value.get(0));
 				   allocate_mapper(machineID, mapper_id, String.valueOf(blockID), read_from_machine, job, mc_mp);
 				   aval_cpus --;
 				   this.cpu_resource.put(machineID, aval_cpus);
 				   allocated = true;
+				   Set<String> running_jobIDs = running_jobs.get(machineID);
+				   	if (running_jobIDs == null)
+				   	{
+					   running_jobIDs = new HashSet<String>();
+					   running_jobIDs.add(job.get_jobId());
+					   running_jobs.put(machineID, running_jobIDs);
+				   	}
+				   	else
+				   	{
+					   running_jobIDs.add(job.get_jobId());
+				   	}
+				   }
+				   else
+				   {
+					   System.out.println("No Available Machine");
+				   }
 			   }		     
 			  }
 			
@@ -354,8 +392,22 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		return true;
 	}
 	
+	private void restart_jobs(String machineID)
+	{
+		Set<String> running_jobIDs = running_jobs.get(machineID);
+		for(String jobID: running_jobIDs)
+		{
+			Job job = this.jobID_Job.get(jobID);
+			System.out.println("Terminating Job:"+jobID+" because of machine:"+machineID+" is down");
+			terminate_job(jobID);
+			System.out.println("Restarting Job:"+jobID+" because of machine:"+machineID+" is down");
+			schedule(job);
+		}		
+	}
+	
+	
 	@Override
-	public void heartbeat(Msg msg) throws RemoteException {
+	public void heartbeat(Msg msg){
 		// TODO Auto-generated method stub
 		
 		if (msg.getTask_tp() == TASK_TP.MAPPER)
@@ -410,6 +462,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				if (is_task_finished(jobID, TASK_TP.REDUCER))
 				{
 					System.out.println("All Reducer finished");
+					job.set_jobStatus(JOB_STATUS.FINISHED);
+					remove_from_running_jobs(jobID);
 					//JobStatus jstatus = this.job_status.get(jobID);
 					//jstatus.set_job_stat(JOB_STATUS.FINISHED);
 					
@@ -420,8 +474,6 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		if (msg.getMsg_tp() == MSG_TP.HEARTBEAT)
 		{
 			cpu_resource.put(msg.getMachine_id(), msg.get_aval_procs());
-			//System.out.println("Putting cpu num into cpu_resources, machineID:"+msg.getMachine_id()
-			//		+", cpu num:"+msg.get_aval_procs());
 		}
 	}
 	
@@ -533,9 +585,29 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		}
     }
     
+    private void remove_from_running_jobs(String jobID)
+    {
+    	Set set = running_jobs.entrySet();
+		Iterator iter = set.iterator();
+		while(iter.hasNext())
+		{
+			Entry entry = (Entry)iter.next();
+			String machineID = (String)entry.getKey();
+			Set<String> jobIDs = (Set<String>)entry.getValue();
+			for (String running_jobID: jobIDs)
+			{
+				if (running_jobID.equals(jobID))
+				{
+					jobIDs.remove(running_jobID);
+				}
+			}
+		}
+    }
+    
 	public void terminate_job(String jobID)
 	{
 		Job job = jobID_Job.get(jobID);
+		
 		HashMap<String,TASK_STATUS> mapper_status = null;
 		HashMap<String,TASK_STATUS> reducer_status = null;
 		
@@ -544,6 +616,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		reducer_status = job.get_reducerStatus();
 		terminate_mappers(jobID, mapper_status);
 		terminate_reducers(jobID, reducer_status);
+		job.set_jobStatus(JOB_STATUS.TERMINATED);
+		remove_from_running_jobs(jobID);
 		
 	}
 	
@@ -571,6 +645,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 					// TODO Auto-generated catch block
 					System.out.println("Warning: TaskTracker on "+machineID+" has dead");
 					this.alive_tasktrackers.remove(machineID);
+					restart_jobs(machineID);
 				}
 			}
 			try {
