@@ -73,12 +73,11 @@ public class NameNodeImpl implements NameNode
   {
     if (terminated)
       throw new RemoteException("DFS terminating");
-    if (dataNodeInfos.get(id) != null) {
+    if (dataNodeInfos.get(id) != null)
       dataNodeInfos.get(id).setDataNode(datanode);
-      dataNodeInfos.get(id).setAlive(true);
-    } else {
+    else
       dataNodeInfos.put(id, new DataNodeInfo(id, datanode));
-    }
+    dataNodeInfos.get(id).setAlive(true);
   }
 
   /**

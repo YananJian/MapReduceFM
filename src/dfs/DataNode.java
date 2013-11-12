@@ -35,7 +35,7 @@ public interface DataNode extends Remote
 
   /**
    * Retrieve a block with blockId and given content to the DataNode directly from another DataNode
-   * @param other the sender
+   * @param datanode the sender
    * @param blockId block's id
    * @throws RemoteException
    */
