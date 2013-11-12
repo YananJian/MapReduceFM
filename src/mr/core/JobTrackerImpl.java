@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
 import java.util.Set;
 
 import mr.Job;
@@ -26,9 +27,10 @@ import conf.Config;
 import dfs.NameNode;
 
 
-public class JobTrackerImpl implements JobTracker{
+public class JobTrackerImpl implements JobTracker, Callable{
 	String registryHost = Config.MASTER_IP;
-	int registryPort = Config.MASTER_PORT;
+	int mrPort = Config.MR_PORT;
+	int dfsPort = Config.DFS_PORT;
 	NameNode namenode = null;
 	int reducer_ct = Config.REDUCER_NUM;
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
@@ -42,18 +44,19 @@ public class JobTrackerImpl implements JobTracker{
 	HashMap<String, HashMap<String, HashMap<String, Integer>>> job_mc_hash_size= new HashMap<String, HashMap<String, HashMap<String, Integer>>>();	
 	HashMap<String, String> jobID_outputdir = new HashMap<String, String>();
 	HashMap<String, Job> jobID_Job = new HashMap<String, Job>();
-	
+	HashMap<String, TaskTracker> alive_tasktrackers = new HashMap<String, TaskTracker>();
 	HashMap<String, Integer> cpu_resource = new HashMap<String, Integer>();
-	Registry registry = null;
-	
+	Registry mr_registry = null;
+	Registry dfs_registry = null;
 	
 	public void init(String port)
 	{
 		try {
-	        registry = LocateRegistry.getRegistry(registryHost, registryPort);
+			mr_registry = LocateRegistry.createRegistry(mrPort);
+			dfs_registry = LocateRegistry.getRegistry(registryHost, dfsPort);
 	        JobTracker stub = (JobTracker) UnicastRemoteObject.exportObject(this, Integer.valueOf(port));
-	        registry.rebind("JobTracker", stub);
-	        this.namenode = (NameNode) registry.lookup("NameNode");
+	        mr_registry.rebind("JobTracker", stub);
+	        this.namenode = (NameNode) dfs_registry.lookup("NameNode");
 	        
 	        System.out.println("Registered");
 	       
@@ -99,7 +102,7 @@ public class JobTrackerImpl implements JobTracker{
 		    partition_res.put(machineID, lst);
 		} 
 		// Since I have to think more about how to optimize it, let's assume hashID = machineID
-		System.out.println("In preset_reducer, partition_res:"+partition_res.toString());
+		
 		return partition_res;
 		
 	}
@@ -119,7 +122,7 @@ public class JobTrackerImpl implements JobTracker{
 	{
 		TaskTracker tt;
 		try {
-			tt = (TaskTracker)registry.lookup("TaskTracker_"+machineID);
+			tt = this.alive_tasktrackers.get(machineID);
 			 /* 
 			    * TaskTracker has to hash key to an ID based on REDUCER_NUM 
 			    * Thus to ensure same key on different mappers will have the same ID
@@ -148,10 +151,7 @@ public class JobTrackerImpl implements JobTracker{
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (NotBoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		  
 	}
 	
@@ -242,7 +242,7 @@ public class JobTrackerImpl implements JobTracker{
 		    String val = (String) entry.getValue(); 
 			mcIDs.add(val);
 		}
-		System.out.println("JobID:"+jobID+" has mcIDs:"+mcIDs.toString());
+		
 		return mcIDs;
 		
 	}
@@ -260,8 +260,9 @@ public class JobTrackerImpl implements JobTracker{
 		    String machineID = (String) entry.getKey(); 		    
 		    List<String> hashIDs = (List<String>) entry.getValue();
 		    try {
-				TaskTracker w_taskTracker = (TaskTracker) registry.lookup("TaskTracker_"+machineID);
-				String w_path = "tmp/" + jobID + '/' + machineID + '/';
+				//TaskTracker w_taskTracker = (TaskTracker) mr_registry.lookup("TaskTracker_"+machineID);
+		    	TaskTracker w_taskTracker = this.alive_tasktrackers.get(machineID);
+		    	String w_path = "tmp/" + jobID + '/' + machineID + '/';
 				
 				while(mc_iter.hasNext())
 				{				
@@ -269,7 +270,8 @@ public class JobTrackerImpl implements JobTracker{
 					
 					if (curr.equals(machineID))
 						continue;
-					TaskTracker r_taskTracker = (TaskTracker) registry.lookup("TaskTracker_"+curr);
+					
+					TaskTracker r_taskTracker = this.alive_tasktrackers.get(curr);
 					String r_path = "tmp/" + jobID + '/' + curr + '/';
 					for (int i = 0;i< hashIDs.size(); i++)
 					{
@@ -289,45 +291,36 @@ public class JobTrackerImpl implements JobTracker{
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (NotBoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			} 
 		} 
-		
-		//TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+String.valueOf(value.get(0)));
 	}
 
 	public void start_reducer(String job_id, String write_path, HashMap<String, List<String>> mcID_hashIDs)
 	{
 		Iterator iter = mcID_hashIDs.entrySet().iterator();
+		int ct = 0;
 		while(iter.hasNext())
 		{
 			Map.Entry entry = (Map.Entry) iter.next();
 			String mcID = (String)entry.getKey();
 			List<String> hashIDs = (List<String>)entry.getValue();
-			try {
-				TaskTracker tt = (TaskTracker)registry.lookup("TaskTracker_"+mcID);
-				String reducer_id = job_id + "_r_" + String.valueOf(mcID);
+						
+				TaskTracker tt = this.alive_tasktrackers.get(mcID);
+				String reducer_id = job_id + "_r_" + String.valueOf(ct);
 				Job job = this.jobID_Job.get(job_id);
 				Class<? extends Reducer> reducer = job.get_reducer();
-				System.out.println("Prepare to start reducer in JobTracker, reducerID:"+reducer_id);
-				tt.start_reducer(job_id, reducer_id, write_path, reducer);
-				Hashtable<String, String> rcmc = new Hashtable<String, String>();
-				rcmc.put(reducer_id, mcID);
-				reducer_machine.put(job_id, rcmc);
-				System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
-			} catch (AccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NotBoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	
+				
+				try {
+					tt.start_reducer(job_id, reducer_id, write_path, reducer);
+					Hashtable<String, String> rcmc = new Hashtable<String, String>();
+					rcmc.put(reducer_id, mcID);
+					reducer_machine.put(job_id, rcmc);
+					System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
+					ct += 1;
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		}
 	}
 	
@@ -377,9 +370,17 @@ public class JobTrackerImpl implements JobTracker{
 				cpu_resource.put(machineID, aval_cpus);
 				
 				HashMap<String, Integer> ret = (HashMap<String, Integer>)msg.getContent();
-				HashMap<String, HashMap<String, Integer>> mc_hash_size = new HashMap<String, HashMap<String, Integer>>();
-				mc_hash_size.put(machineID, ret);
-				job_mc_hash_size.put(jobID, mc_hash_size);
+				HashMap<String, HashMap<String, Integer>> mc_hash_size = job_mc_hash_size.get(jobID);
+				if (mc_hash_size == null)
+				{
+					HashMap<String, HashMap<String, Integer>> f_mc_hash_size = new HashMap<String, HashMap<String, Integer>>();
+					f_mc_hash_size.put(machineID, ret);
+					job_mc_hash_size.put(jobID, f_mc_hash_size);
+				}
+				else
+				{
+					mc_hash_size.put(machineID, ret);	
+				}
 				if (is_task_finished(jobID, TASK_TP.MAPPER))
 				{
 					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
@@ -405,8 +406,8 @@ public class JobTrackerImpl implements JobTracker{
 				if (is_task_finished(jobID, TASK_TP.REDUCER))
 				{
 					System.out.println("All Reducer finished");
-					JobStatus jstatus = this.job_status.get(jobID);
-					jstatus.set_job_stat(JOB_STATUS.FINISHED);
+					//JobStatus jstatus = this.job_status.get(jobID);
+					//jstatus.set_job_stat(JOB_STATUS.FINISHED);
 					
 				}
 			}
@@ -480,7 +481,7 @@ public class JobTrackerImpl implements JobTracker{
 			{
 				TaskTracker tt;
 				try {
-					tt = (TaskTracker) registry.lookup("TaskTracker_"+machineID);
+					tt = this.alive_tasktrackers.get(machineID);
 					tt.terminate(mapperID);
 					System.out.println("Task "+mapperID +" is terminated");
 				} catch (AccessException e) {
@@ -489,10 +490,7 @@ public class JobTrackerImpl implements JobTracker{
 				} catch (RemoteException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (NotBoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				} 
 				
 			}
 			else if (status == TASK_STATUS.FINISHED)
@@ -513,8 +511,8 @@ public class JobTrackerImpl implements JobTracker{
 			if (status == TASK_STATUS.RUNNING)
 			{
 				TaskTracker tt;
-				try {
-					tt = (TaskTracker) registry.lookup("TaskTracker_"+machineID);
+				try {					
+					tt = this.alive_tasktrackers.get(machineID);
 					tt.terminate(reducerID);
 					System.out.println("Task "+reducerID +" is terminated");
 				} catch (AccessException e) {
@@ -523,10 +521,7 @@ public class JobTrackerImpl implements JobTracker{
 				} catch (RemoteException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (NotBoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				} 
 				
 			}
 			else if (status == TASK_STATUS.FINISHED)
@@ -548,6 +543,27 @@ public class JobTrackerImpl implements JobTracker{
 		
 	}
 	
+	@Override
+	public void print() throws RemoteException {
+		// TODO Auto-generated method stub
+		System.out.println("This is JobTracker");
+	}
+
+	@Override
+	public Object call() throws Exception {
+		// TODO Auto-generated method stub
+		while(true)
+		{
+			mr_registry.list();
+		}
+	}
+	
+	@Override
+	public void register(String machineID, TaskTracker tt) throws RemoteException {
+		// TODO Auto-generated method stub
+		alive_tasktrackers.put(machineID, tt);
+	}
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		JobTrackerImpl jt = new JobTrackerImpl();
@@ -555,10 +571,8 @@ public class JobTrackerImpl implements JobTracker{
 		jt.init(port);
 	}
 
-	@Override
-	public void print() throws RemoteException {
-		// TODO Auto-generated method stub
-		System.out.println("This is JobTracker");
-	}
+	
+
+	
 	
 }

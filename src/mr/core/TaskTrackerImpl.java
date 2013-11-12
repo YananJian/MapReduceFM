@@ -49,10 +49,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class TaskTrackerImpl implements TaskTracker, Callable{
 	
 	String registryHost = Config.MASTER_IP;
-	int registryPort = Config.MASTER_PORT;
+	int mrPort = Config.MR_PORT;
+	int dfsPort = Config.DFS_PORT;
 	JobTracker jobTracker = null;
 	int id = 0;
-	Registry registry = null;
+	Registry mr_registry = null;
 	String read_dir = null;
 	ExecutorService exec = null;
 	int reducer_ct = 0;
@@ -64,8 +65,8 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	{
 		this.id = id;		
 		try {
-			registry = LocateRegistry.getRegistry(registryHost, registryPort);
-			this.jobTracker = (JobTracker) registry.lookup("JobTracker");
+			mr_registry = LocateRegistry.getRegistry(registryHost, mrPort);
+			this.jobTracker = (JobTracker) mr_registry.lookup("JobTracker");
 			
 			this.read_dir = read_dir;
 			this.port = Integer.valueOf(port);
@@ -95,7 +96,8 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	{
 		try {	        	        
 	        TaskTracker stub = (TaskTracker) UnicastRemoteObject.exportObject(this, port);
-	        registry.rebind("TaskTracker_"+String.valueOf(this.id), stub);	        
+	        jobTracker.register(String.valueOf(id), stub);
+	              
 	        System.out.println("Registered");
 	        Msg hb_msg = new Msg();
 	        Integer aval_procs = new Integer(Runtime.getRuntime().availableProcessors());
@@ -220,6 +222,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			msg.setTask_tp(TASK_TP.MAPPER);
 			msg.setTask_stat(TASK_STATUS.FINISHED);			
 			msg.setContent(idSize);
+			System.out.println("Finished Mapper, machineID:"+id+"\ttaskID:"+mapper_id);
 			msg.setMachine_id(String.valueOf(id));
 			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
 			this.heartbeats.offer(msg);
@@ -264,7 +267,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			}
 			StringReader strr = new StringReader(ret_s);
 			BufferedReader br = new BufferedReader(strr);
-			FileUploader uploader = new FileUploader(br, write_path+'/'+reducer_id , 0, registryHost, registryPort);
+			FileUploader uploader = new FileUploader(br, write_path+'/'+reducer_id , 0, registryHost, dfsPort);
 			uploader.upload();
 			
 			/*
@@ -316,11 +319,6 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			{
 				System.out.println("Msg tp:"+msg.getMsg_tp()+",CPUs:"+msg.get_aval_procs());
 				jobTracker.heartbeat(msg);
-				
-				jobTracker.print();
-				jobTracker.heartbeat(msg);
-				
-				System.out.println("Sent to JobTracker");
 			}	
 			else
 			{
@@ -337,6 +335,13 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		
 	}
 	
+	@Override
+	public void heartbeat() throws RemoteException {
+		// TODO Auto-generated method stub
+		
+		
+	}
+	
 	public static void main(String[] args) {
 		
 		// TaskTracker ID should be the same with the id of the DataNode
@@ -347,4 +352,5 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		TaskTrackerImpl tt = new TaskTrackerImpl(Integer.parseInt(taskNodeID), dir, port, reducer_ct);
 		tt.init();
 	}
+	
 }

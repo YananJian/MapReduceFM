@@ -34,18 +34,18 @@ public class Task implements Callable {
 	TASK_TP type = null;
 	String output_dir = null;
 	String registryHost = Config.MASTER_IP;
-	int registryPort = Config.MASTER_PORT;
+	int dfsPort = Config.DFS_PORT;
 	NameNode namenode = null;
 	String read_from_machine = null;
-	Registry registry = null;
+	Registry dfs_registry = null;
 	
 	public Task(String job_id, String task_id) {
 		this.job_id = job_id;
 		this.task_id = task_id;	
 		
 		try {
-			registry = LocateRegistry.getRegistry(registryHost, registryPort);
-			namenode = (NameNode) registry.lookup("NameNode");
+			dfs_registry = LocateRegistry.getRegistry(registryHost, dfsPort);
+			namenode = (NameNode) dfs_registry.lookup("NameNode");
 			
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block

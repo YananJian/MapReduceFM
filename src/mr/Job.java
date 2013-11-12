@@ -41,7 +41,7 @@ public class Job implements java.io.Serializable{
 	public Job()
 	{
 		try {
-			registry = LocateRegistry.getRegistry(Config.MASTER_IP, Config.MASTER_PORT);
+			registry = LocateRegistry.getRegistry(Config.MASTER_IP, Config.MR_PORT);
 			jobTracker = (JobTracker) registry.lookup("JobTracker");
 			Long uuid = Math.abs(UUID.randomUUID().getMostSignificantBits());
 			job_id = String.valueOf(uuid);
@@ -142,19 +142,6 @@ public class Job implements java.io.Serializable{
 		return this.fname;
 	}
 	
-	private void registerJob()
-	{
-		double d = System.currentTimeMillis();  
-        d += System.nanoTime() ;         
-		
-		String job_id = String.valueOf((int)d);
-		Msg msg = new Msg();
-		msg.setJob_id(job_id);
-		msg.setMsg_tp(MSG_TP.SET_JOB_STATUS);
-		msg.setJob_stat(JOB_STATUS.STARTING);
-		Msg ret_msg = Network.communicate(Config.MASTER_IP, Config.MASTER_PORT, msg);
-		System.out.println(ret_msg.getContent());
-	}
 	
 	public void submit() throws RemoteException
 	{
@@ -167,7 +154,7 @@ public class Job implements java.io.Serializable{
 				                           fname, 
 				                           num_replicas, 
 				                           Config.MASTER_IP, 
-				                           Config.MASTER_PORT);	
+				                           Config.DFS_PORT);	
 		// Scheduler assign task to Compute Nodes
 		
 		fu.upload();

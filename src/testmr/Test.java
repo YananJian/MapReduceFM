@@ -41,8 +41,8 @@ public class Test {
 	public static void main(String args[])
 	{
 		//Job job = new Job();
-		String input_path = "/Users/yanan/javapro/workspace/testfiles/t3";
-		String output_path = "/Users/yanan/javapro/workspace/testfiles/t2";
+		String input_path = "./testfiles/t3";
+		String output_path = "./testfiles/t2";
 		String tmp[] = input_path.split("/");
 		Job job = new Job();
 		job.set_fileInputPath(input_path);
