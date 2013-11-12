@@ -145,33 +145,6 @@ public class Job implements java.io.Serializable{
 	
 	public void submit() throws RemoteException
 	{
-		// Register job in MetaDataTBL, set job status to Starting
-		//registerJob();
-		int num_replicas = 3;
-		// FileUploader begin to split and upload file (require block, read till meet split size, write to block)
-		try {
-		FileUploader fu = new FileUploader(this.fileInputPath, 
-				                           fname, 
-				                           num_replicas, 
-				                           Config.MASTER_IP, 
-				                           Config.DFS_PORT);	
-		// Scheduler assign task to Compute Nodes
-		
-		fu.upload();
-		System.out.println("After upload");
-			
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NotBoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		// Set job status to Started in MetaDataTBL
-		
 		jobTracker.schedule(this);
 	}
 

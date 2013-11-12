@@ -250,7 +250,6 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
 		taskID_exec.put(reducer_id, f1);
-		System.out.println("Reducer started in taskTracker");
 		String ret_s = "";
 		try {
 			LinkedList<Record> contents = (LinkedList<Record>) f1.get();
@@ -328,12 +327,6 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			else
 			{
 				TimeUnit.SECONDS.sleep(1);
-				/*Msg hb_msg = new Msg();
-				int aval_procs = Runtime.getRuntime().availableProcessors();
-				hb_msg.set_aval_procs(aval_procs);
-				hb_msg.setMsg_tp(MSG_TP.HEARTBEAT);
-				hb_msg.setMachine_id(String.valueOf(id));
-				this.heartbeats.add(hb_msg);*/
 			}
 			
 		}
