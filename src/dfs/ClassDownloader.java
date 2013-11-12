@@ -82,8 +82,8 @@ public class ClassDownloader
   {
     ClassDownloader downloader = null;
     try {
-      String path = args[0];
-      String filename = args[1];
+      String filename = args[0];
+      String path = args[1];
       String registryHost = args[2];
       int registryPort = Integer.parseInt(args[3]);
       downloader = new ClassDownloader(path, filename, registryHost, registryPort);
