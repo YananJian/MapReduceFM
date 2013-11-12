@@ -42,7 +42,7 @@ public class Test {
 	{
 		//Job job = new Job();
 		String input_path = "./testfiles/t3";
-		String output_path = "./testfiles/t2";
+		String output_path = "./testfiles/t2/";
 		String tmp[] = input_path.split("/");
 		Job job = new Job();
 		job.set_fileInputPath(input_path);

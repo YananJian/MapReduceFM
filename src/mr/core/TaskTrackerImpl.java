@@ -17,6 +17,7 @@ import java.io.StringReader;
 import java.lang.reflect.ParameterizedType;
 
 import conf.Config;
+import dfs.FileDownloader;
 import dfs.FileUploader;
 import dfs.NameNode;
 import mr.Context;
@@ -267,9 +268,13 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			}
 			StringReader strr = new StringReader(ret_s);
 			BufferedReader br = new BufferedReader(strr);
-			FileUploader uploader = new FileUploader(br, write_path+'/'+reducer_id , 0, registryHost, dfsPort);
+			FileUploader uploader = new FileUploader(br, reducer_id , 0, registryHost, dfsPort);
 			uploader.upload();
 			
+			//FileDownloader downloader = new FileDownloader(write_path+'/', reducer_id, registryHost, dfsPort);
+			FileDownloader downloader = new FileDownloader(reducer_id, reducer_id, registryHost, dfsPort);
+			downloader.download();
+			System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
 			/*
 			 * After executing task, wrap the return value into Heartbeat Msg.
 			 * Send Heartbeat to JobTracker.
@@ -282,7 +287,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			msg.setTask_tp(TASK_TP.REDUCER);
 			msg.setTask_stat(TASK_STATUS.FINISHED);			
 			msg.setMachine_id(String.valueOf(id));
-			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
+			
 			this.heartbeats.offer(msg);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block

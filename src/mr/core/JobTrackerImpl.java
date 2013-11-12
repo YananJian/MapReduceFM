@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.Set;
 
 import mr.Job;
@@ -48,6 +51,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	HashMap<String, Integer> cpu_resource = new HashMap<String, Integer>();
 	Registry mr_registry = null;
 	Registry dfs_registry = null;
+	ExecutorService exec = null;
 	
 	public void init(String port)
 	{
@@ -56,10 +60,10 @@ public class JobTrackerImpl implements JobTracker, Callable{
 			dfs_registry = LocateRegistry.getRegistry(registryHost, dfsPort);
 	        JobTracker stub = (JobTracker) UnicastRemoteObject.exportObject(this, Integer.valueOf(port));
 	        mr_registry.rebind("JobTracker", stub);
-	        this.namenode = (NameNode) dfs_registry.lookup("NameNode");
-	        
+	        this.namenode = (NameNode) dfs_registry.lookup("NameNode");        
 	        System.out.println("Registered");
-	       
+	        exec = Executors.newCachedThreadPool();
+			exec.submit(this);
 	      } catch (Exception e) {
 	        
 	        e.printStackTrace();
@@ -550,11 +554,31 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	}
 
 	@Override
-	public Object call() throws Exception {
+	public Object call() {
 		// TODO Auto-generated method stub
 		while(true)
 		{
-			mr_registry.list();
+			Set set = alive_tasktrackers.entrySet();
+			Iterator iter = set.iterator();
+			while(iter.hasNext())
+			{
+				Entry ent = (Entry) iter.next();
+				String machineID = (String)ent.getKey();
+				TaskTracker tt = (TaskTracker)ent.getValue();
+				try {
+					tt.heartbeat();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					System.out.println("Warning: TaskTracker on "+machineID+" has dead");
+					this.alive_tasktrackers.remove(machineID);
+				}
+			}
+			try {
+				TimeUnit.SECONDS.sleep(1);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
