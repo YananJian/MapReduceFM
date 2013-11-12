@@ -125,8 +125,10 @@ public class DataNodeImpl implements DataNode
       BufferedReader br = new BufferedReader(new FileReader(dir + blockId));
       StringBuilder content = new StringBuilder();
       String line = null;
-      while ((line = br.readLine()) != null)
+      while ((line = br.readLine()) != null) {
         content.append(line);
+        content.append("\n");
+      }
       br.close();
       return content.toString();
     } catch (Exception e) {

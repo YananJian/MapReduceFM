@@ -337,7 +337,7 @@ public class NameNodeImpl implements NameNode
           String line = br.readLine();
           String[] words = line.split(" ");
           DataNodeInfo dni = new DataNodeInfo(Integer.parseInt(words[0]), null);
-          for (int j = 2; j < words.length; j++)
+          for (int j = 1; j < words.length; j++)
             dni.addBlock(Integer.parseInt(words[j]));
           dataNodeInfos.put(Integer.parseInt(words[0]), dni);
         }
