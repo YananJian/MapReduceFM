@@ -210,7 +210,7 @@ public class DataNodeImpl implements DataNode
         break;
       } catch (Exception e) {
         /* NameNode not ready, keep trying */
-        e.printStackTrace();
+        System.out.println("NameNode unreachable, retry in 5 seconds");
         try {
           Thread.sleep(5000);
         } catch (InterruptedException ie) {

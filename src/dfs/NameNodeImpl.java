@@ -220,7 +220,7 @@ public class NameNodeImpl implements NameNode
     StringBuilder dfs = new StringBuilder();
     dfs.append("========= dfs info =========\n");
     dfs.append("#default replicas: " + nReplicasDefault + "\n");
-    dfs.append("healthcheck interval: " + healthCheckInterval + " second\n");
+    dfs.append("healthcheck interval: " + healthCheckInterval + " second(s)\n");
     dfs.append("block size: " + blockSize + " byte\n");
     dfs.append("\n========= file info =========\n");
     for (Map.Entry<String, FileInfo> entry : fileInfos.entrySet())
@@ -394,7 +394,7 @@ public class NameNodeImpl implements NameNode
             /* get all datanodes that has this block */
             List<Integer> dataNodeIds = blockInfos.get(blockId).getDataNodeIds();
             /* assume datanodes that have this replica won't all fail at the same time */
-            while (true) {
+            while (!terminated) {
               DataNode datanode = null;
               try {
                 datanode = allocateBlock();
