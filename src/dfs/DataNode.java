@@ -26,6 +26,14 @@ public interface DataNode extends Remote
   public void putBlock(int blockId, String content) throws RemoteException;
 
   /**
+   * Put a block with blockId and given content to the DataNode
+   * @param blockId block's id
+   * @param content content in byte format
+   * @throws RemoteException
+   */
+  public void putBlock(int blockId, byte[] content) throws RemoteException;
+
+  /**
    * Retrieve a block with blockId and given content to the DataNode directly from another DataNode
    * @param other the sender
    * @param blockId block's id
@@ -40,6 +48,14 @@ public interface DataNode extends Remote
    * @throws RemoteException
    */
   public String getBlock(int blockId) throws RemoteException;
+
+  /**
+   * Retrieve content from block with given block ID in byte
+   * @param blockId block's id
+   * @return block content in string format
+   * @throws RemoteException
+   */
+  public byte[] getByteBlock(int blockId) throws RemoteException;
 
   /**
    * Get directory for data blocks
