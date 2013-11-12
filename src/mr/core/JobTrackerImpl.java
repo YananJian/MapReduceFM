@@ -34,25 +34,12 @@ public class JobTrackerImpl implements JobTracker{
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
 	/*
 	 * mapper_machine: pair of job, mapperID and machineID
-	 * preset_mapper_ct: pair of mapper_id and count of mappers the scheduler allocated.
-	 * preset_mapper_job_task: mapping of preset job_id and list of mapper_id
-	 * finished_mapper_ct: pair of mapper_id and count of mappers that have finished.
-	 * finished_mapper_job_task: mapping of finished job_id and list of mapper_id
-	 * id_ssum: mapping of job_id, hashedID(Based on num of reducers) and the sum of size of blocks 
-	 * 
 	 * */
 	Hashtable<String, Hashtable<String, String>> mapper_machine = new Hashtable<String, Hashtable<String, String>>();
 	Hashtable<String, Hashtable<String, String>> reducer_machine = new Hashtable<String, Hashtable<String, String>> ();
-	Hashtable<String, Integer> preset_mapper_ct = new Hashtable<String, Integer>();
-	Hashtable<String, List<String>> preset_mapper_job_task = new Hashtable<String, List<String>>();
 	
-	Hashtable<String, Integer> finished_mapper_ct = new Hashtable<String, Integer>();
-	Hashtable<String, List<String>> finished_mapper_job_task = new Hashtable<String, List<String>>();
-	
-	HashMap<String, HashMap<String, Integer>> id_ssum = new HashMap<String, HashMap<String, Integer>>();
 	//JobID, MachineID, partitionID, size
-	HashMap<String, HashMap<String, HashMap<String, Integer>>> job_mc_hash_size= new HashMap<String, HashMap<String, HashMap<String, Integer>>>();
-	//Hashtable<String, List<String>> job_task_mapping = new Hashtable<String, List<String>>();
+	HashMap<String, HashMap<String, HashMap<String, Integer>>> job_mc_hash_size= new HashMap<String, HashMap<String, HashMap<String, Integer>>>();	
 	HashMap<String, String> jobID_outputdir = new HashMap<String, String>();
 	HashMap<String, Job> jobID_Job = new HashMap<String, Job>();
 	
@@ -324,6 +311,7 @@ public class JobTrackerImpl implements JobTracker{
 				String reducer_id = job_id + "_r_" + String.valueOf(mcID);
 				Job job = this.jobID_Job.get(job_id);
 				Class<? extends Reducer> reducer = job.get_reducer();
+				System.out.println("Prepare to start reducer in JobTracker, reducerID:"+reducer_id);
 				tt.start_reducer(job_id, reducer_id, write_path, reducer);
 				Hashtable<String, String> rcmc = new Hashtable<String, String>();
 				rcmc.put(reducer_id, mcID);
@@ -372,8 +360,7 @@ public class JobTrackerImpl implements JobTracker{
 	@Override
 	public void heartbeat(Msg msg) throws RemoteException {
 		// TODO Auto-generated method stub
-		System.out.println("Got Msg!");
-				
+		
 		if (msg.getTask_tp() == TASK_TP.MAPPER)
 		{
 			if (msg.getTask_stat() == TASK_STATUS.FINISHED)
@@ -428,8 +415,8 @@ public class JobTrackerImpl implements JobTracker{
 		if (msg.getMsg_tp() == MSG_TP.HEARTBEAT)
 		{
 			cpu_resource.put(msg.getMachine_id(), msg.get_aval_procs());
-			System.out.println("Putting cpu num into cpu_resources, machineID:"+msg.getMachine_id()
-					+", cpu num:"+msg.get_aval_procs());
+			//System.out.println("Putting cpu num into cpu_resources, machineID:"+msg.getMachine_id()
+			//		+", cpu num:"+msg.get_aval_procs());
 		}
 	}
 	

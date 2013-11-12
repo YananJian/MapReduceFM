@@ -97,7 +97,7 @@ public class Task implements Callable {
 	}
 
 	@Override
-	public Object call() throws Exception {
+	public Object call() throws RemoteException {
 		// TODO Auto-generated method stub
 		try {
 			if (type == TASK_TP.MAPPER)

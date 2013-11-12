@@ -246,6 +246,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
 		taskID_exec.put(reducer_id, f1);
+		System.out.println("Reducer started in taskTracker");
 		String ret_s = "";
 		try {
 			LinkedList<Record> contents = (LinkedList<Record>) f1.get();
