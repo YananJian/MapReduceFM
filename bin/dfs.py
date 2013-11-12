@@ -7,7 +7,7 @@ def dfs(argv):
     describe_dfs()
   elif argv[1] == "put":
     put_file(argv)
-  elif argv[2] == "get":
+  elif argv[1] == "get":
     get_file(argv)
 
 def describe_dfs():
