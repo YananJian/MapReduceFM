@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 import java.lang.Thread;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -72,12 +73,11 @@ public class NameNodeImpl implements NameNode
   {
     if (terminated)
       throw new RemoteException("DFS terminating");
-    if (dataNodeInfos.get(id) != null) {
+    if (dataNodeInfos.get(id) != null)
       dataNodeInfos.get(id).setDataNode(datanode);
-      dataNodeInfos.get(id).setAlive(true);
-    } else {
+    else
       dataNodeInfos.put(id, new DataNodeInfo(id, datanode));
-    }
+    dataNodeInfos.get(id).setAlive(true);
   }
 
   /**
@@ -196,8 +196,14 @@ public class NameNodeImpl implements NameNode
     FileInfo fi = fileInfos.get(filename);
     Map<Integer, List<Integer>> result = new LinkedHashMap<Integer, List<Integer>>();
     List<Integer> blockIds = fi.getBlockIds();
-    for (int blockId : blockIds)
-      result.put(blockId, blockInfos.get(blockId).getDataNodeIds());
+    for (int blockId : blockIds) {
+      List<Integer> aliveIds = new LinkedList<Integer>();
+      List<Integer> dataNodeIds = blockInfos.get(blockId).getDataNodeIds();
+      for (int id : dataNodeIds)
+        if (dataNodeInfos.get(id).isAlive())
+          aliveIds.add(id);
+      result.put(blockId, aliveIds);
+    }
     return result;
   }
 

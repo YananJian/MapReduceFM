@@ -5,6 +5,8 @@ import java.lang.InterruptedException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,13 +70,32 @@ public class DataNodeImpl implements DataNode
       bw.write(content);
       bw.close();
     } catch (IOException e) {
-      throw new RemoteException("Exception caught", e);
+      throw new RemoteException("putBlock", e);
+    }
+  }
+
+  /**
+   * Put a block with blockId and given content to the DataNode
+   * @param blockId block's id
+   * @param content content in byte format
+   * @throws RemoteException
+   */
+  @Override
+  public void putBlock(int blockId, byte[] content) throws RemoteException
+  {
+    blockIds.add(blockId);
+    try {
+      FileOutputStream fileOutputStream = new FileOutputStream(new File(dir + blockId));
+      fileOutputStream.write(content);
+      fileOutputStream.close();
+    } catch (IOException e) {
+      throw new RemoteException("putBlock", e);
     }
   }
 
   /**
    * Retrieve a block with blockId and given content to the DataNode directly from another DataNode
-   * @param other the sender
+   * @param datanode the sender
    * @param blockId block's id
    * @throws RemoteException
    */
@@ -87,7 +108,7 @@ public class DataNodeImpl implements DataNode
       bw.write(datanode.getBlock(blockId));
       bw.close();
     } catch (IOException e) {
-      throw new RemoteException("Exception caught", e);
+      throw new RemoteException("putBlock", e);
     }
   }
 
@@ -109,7 +130,28 @@ public class DataNodeImpl implements DataNode
       br.close();
       return content.toString();
     } catch (Exception e) {
-      throw new RemoteException("getBlock:", e);
+      throw new RemoteException("getBlock", e);
+    }
+  }
+
+  /**
+   * Retrieve content from block with given block ID in byte
+   * @param blockId block's id
+   * @return block content in string format
+   * @throws RemoteException
+   */
+  @Override
+  public byte[] getByteBlock(int blockId) throws RemoteException
+  {
+    try {
+      File file = new File(dir + blockId);
+      byte[] bFile = new byte[(int) file.length()];
+      FileInputStream fileInputStream = new FileInputStream(file);
+      fileInputStream.read(bFile);
+      fileInputStream.close();
+      return bFile;
+    } catch (Exception e) {
+      throw new RemoteException("getByteBlock", e);
     }
   }
 
