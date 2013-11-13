@@ -511,22 +511,21 @@ public class JobTrackerImpl implements JobTracker, Callable{
                 nFinishedReducer++;
         float reducerProgress = nFinishedReducer/nReducer*100;
         sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "\n");
-		return sb.toString();
-	}
-	
-    @Override
-	public String desc_jobs() throws RemoteException
-	{
+        return sb.toString();
+    }
 
+    @Override
+    public String desc_jobs() throws RemoteException
+    {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Job> entry : jobID_Job.entrySet()) {
+            System.out.println(sb.toString());
             sb.append("--------------------------------------------------\n");
             sb.append(desc_job(entry.getKey()));
         }
         sb.append("--------------------------------------------------\n");
-		return sb.toString();
-
-	}
+        return sb.toString();
+    }
 
     private void terminate_mappers(String jobID, HashMap<String,TASK_STATUS> mapper_status)
     {

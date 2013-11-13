@@ -77,7 +77,7 @@ public class Context {
 			Iterable<Writable> values = r.getValues();
 			int m_id = key.hashCode() % reducer_ct;
 			
-			String path = dir + '/' + task_id + '@' + String.valueOf(m_id);
+			String path = dir + task_id + '@' + String.valueOf(m_id);
 			BufferedWriter bw = new BufferedWriter(new FileWriter(path, true));
 			for(Writable val: values)
 			{
