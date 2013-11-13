@@ -1,6 +1,6 @@
 {
   "block size": "64",
-  "replication": "3",
+  "replication": "2",
   "healthcheck interval": "5",
   "fsImage dir": "./fsImage",
   "registry": {
