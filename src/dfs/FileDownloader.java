@@ -1,6 +1,7 @@
 package dfs;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -49,6 +50,14 @@ public class FileDownloader
     Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
     NameNode namenode = (NameNode) registry.lookup("NameNode");
     Map<Integer, List<Integer>> blocks = namenode.getAllBlocks(filename);
+    String dir = new String(path);
+    int idx = dir.lastIndexOf("/");
+    if (idx > 0) {
+      dir = dir.substring(0, idx);
+      File dirFile = new File(dir);
+      if (!dirFile.exists())
+        dirFile.mkdirs();
+    }
     BufferedWriter bw = new BufferedWriter(new FileWriter(path));
     for (Map.Entry<Integer, List<Integer>> entry : blocks.entrySet()) {
       int blockId = entry.getKey();
