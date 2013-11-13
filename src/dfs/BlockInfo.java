@@ -34,8 +34,8 @@ public class BlockInfo
     { return blockId; }
 
   /**
-   * Get the filename of the block
-   * @return filename of the block
+   * Get the filename of the file this block belongs to
+   * @return filename
    */
   public String getFileName()
     { return filename; }

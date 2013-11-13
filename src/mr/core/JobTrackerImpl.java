@@ -308,7 +308,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		    try {
 				//TaskTracker w_taskTracker = (TaskTracker) mr_registry.lookup("TaskTracker_"+machineID);
 		    	TaskTracker w_taskTracker = this.alive_tasktrackers.get(machineID);
-		    	String w_path = "tmp/" + jobID + '/' + machineID + '/';
+		    	String w_path = "/tmp/" + jobID + '/' + machineID + '/';
 				
 				while(mc_iter.hasNext())
 				{				
@@ -318,7 +318,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 						continue;
 					
 					TaskTracker r_taskTracker = this.alive_tasktrackers.get(curr);
-					String r_path = "tmp/" + jobID + '/' + curr + '/';
+					String r_path = "/tmp/" + jobID + '/' + curr + '/';
 					for (int i = 0;i< hashIDs.size(); i++)
 					{
 						List<String> names = r_taskTracker.read_dir(r_path+'/', hashIDs.get(i));

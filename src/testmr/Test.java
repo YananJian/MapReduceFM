@@ -1,5 +1,6 @@
 package testmr;
 import java.rmi.RemoteException;
+import java.lang.Thread;
 
 import mr.*;
 import mr.io.*;
@@ -16,6 +17,11 @@ public class Test {
 			
 			TextWritable _val = new TextWritable();
 			_val.setVal("1");
+      try {
+        Thread.sleep(5000);
+      } catch (Exception e) {
+        // igore
+      }
 			context.write(key, _val);
 		}		
 	}
@@ -29,6 +35,11 @@ public class Test {
 			for (Writable val:values)
 			{
 				TextWritable _val = (TextWritable) val;
+        try {
+          Thread.sleep(5000);
+        } catch (Exception e) {
+          // ignore
+        }
 				sum += Integer.parseInt(_val.getVal());
 			}
 			res_sum.setVal(sum);
@@ -41,8 +52,8 @@ public class Test {
 	public static void main(String args[])
 	{
 		//Job job = new Job();
-		String input_path = "./testfiles/t3";
-		String output_path = "./testfiles/t2/";
+		String input_path = args[0];
+		String output_path = args[1];
 		String tmp[] = input_path.split("/");
 		Job job = new Job();
 		job.set_fileInputPath(input_path);

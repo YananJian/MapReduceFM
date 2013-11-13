@@ -104,7 +104,7 @@ public class Task implements Callable {
 			{
 				System.out.println("------------Starting Mapper task in TaskTracker");
 				Mapper<Object, Object, Object, Object> mapper_cls = mapper.newInstance();
-				String output_tmpdir = "tmp/"+job_id+'/'+machine_id+'/';
+				String output_tmpdir = "/tmp/"+job_id+'/'+machine_id+'/';
 				Context context = new Context(job_id, task_id, reducer_ct, output_tmpdir);
 				System.out.println("Executing task, job id:" + job_id
 					+ ", mapper_id:" + task_id);
@@ -141,7 +141,7 @@ public class Task implements Callable {
 				Context context = new Context(job_id, task_id, reducer_ct, output_dir);
 				System.out.println("Executing task, job id:" + job_id
 					+ ", reducer_id:" + task_id);
-				String input_dir = "tmp/"+job_id+'/'+machine_id+'/';
+				String input_dir = "/tmp/"+job_id+'/'+machine_id+'/';
 				//System.out.println("Input to reducer, dir:"+input_dir);
 				reducer_cls.init(input_dir);
 				reducer_cls.bootstrap();
