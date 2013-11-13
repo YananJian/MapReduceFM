@@ -444,6 +444,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				{
 					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
 					shuffle(jobID, mcID_hashIDs);
+					System.out.println("After Shuffle, mcID_hashIDs:"+mcID_hashIDs.toString());
 					start_reducer(jobID, this.jobID_outputdir.get(jobID), mcID_hashIDs);
 				}
 				
