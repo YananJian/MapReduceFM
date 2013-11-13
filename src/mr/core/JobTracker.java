@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import conf.Config;
 import mr.Job;
 import mr.common.Msg;
 import dfs.DataNode;

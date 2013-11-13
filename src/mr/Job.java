@@ -1,6 +1,5 @@
 package mr;
 
-import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -9,27 +8,19 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import mr.common.Constants.JOB_STATUS;
-import mr.common.Constants.MSG_TP;
-import mr.common.Msg;
-import mr.common.Network;
 import mr.core.*;
-import conf.Config;
-import dfs.FileUploader;
 import dfs.NameNode;
 import mr.common.Constants.*;
 
 public class Job implements java.io.Serializable{
 	
-	
 	private static final long serialVersionUID = 1L;
-	Class<? extends Mapper> mapper = null;
-	Class<? extends Reducer> reducer = null;
+	Class<? extends Mapper<?, ?, ?, ?>> mapper = null;
+	Class<? extends Reducer<?, ?, ?, ?>> reducer = null;
 	String fileInputPath = null;
 	String fileOutputPath = null;
 	String fname = null;
 	private Registry registry = null;
-	private String registryHost;
-	private int registryPort;
 	NameNode namenode = null;
 	JobTracker jobTracker = null;
 	String job_id = null;
@@ -39,18 +30,16 @@ public class Job implements java.io.Serializable{
 	HashMap<String, TASK_STATUS> reducer_status = new HashMap<String, TASK_STATUS>();
 	JOB_STATUS stat = null;
 	
-	public Job()
+	public Job(String host, int port)
 	{
 		try {
-			registry = LocateRegistry.getRegistry(Config.MASTER_IP, Config.MR_PORT);
+			registry = LocateRegistry.getRegistry(host, port);
 			jobTracker = (JobTracker) registry.lookup("JobTracker");
 			Long uuid = Math.abs(UUID.randomUUID().getMostSignificantBits());
 			job_id = String.valueOf(uuid);
 		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NotBoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -111,22 +100,22 @@ public class Job implements java.io.Serializable{
 		return this.job_id;
 	}
 	
-	public void set_mapper(Class<? extends Mapper> class1)
+	public void set_mapper(Class<? extends Mapper<?, ?, ?, ?>> class1)
 	{
 		this.mapper = class1;
 	}
 	
-	public Class<? extends Mapper> get_mapper()
+	public Class<? extends Mapper<?, ?, ?, ?>> get_mapper()
 	{
 		return this.mapper;
 	}
 	
-	public void set_reducer(Class<? extends Reducer> class1)
+	public void set_reducer(Class<? extends Reducer<?, ?, ?, ?>> class1)
 	{
 		this.reducer = class1;
 	}
 	
-	public Class<? extends Reducer> get_reducer()
+	public Class<? extends Reducer<?, ?, ?, ?>> get_reducer()
 	{
 		return this.reducer;
 	}
@@ -154,17 +143,8 @@ public class Job implements java.io.Serializable{
 	}
 	
 	
-	public void submit()
+	public void submit() throws RemoteException
 	{
-		
-		try {
-			jobTracker.schedule(this);
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		jobTracker.schedule(this);
 	}
-
-	
-
 }

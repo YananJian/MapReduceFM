@@ -59,7 +59,7 @@ public class WikiMediaFilter
   {
     String input_path = args[0];
     String output_path = args[1];
-    Job job = new Job();
+    Job job = new Job(args[2], Integer.parseInt(args[3]));
     job.set_fileInputPath(input_path);
     job.set_fileOutputPath(output_path);
     job.set_mapper(FilterMapper.class);

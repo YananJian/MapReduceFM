@@ -1,6 +1,7 @@
 package testmr;
-import java.rmi.RemoteException;
+
 import java.lang.Thread;
+import java.rmi.RemoteException;
 
 import mr.*;
 import mr.io.*;
@@ -13,8 +14,6 @@ public class Test {
 
 		@Override
 		public void map(TextWritable key, TextWritable val, Context context) {
-			// TODO Auto-generated method stub
-			
 			TextWritable _val = new TextWritable();
 			_val.setVal("1");
       try {
@@ -51,18 +50,17 @@ public class Test {
 	
 	public static void main(String args[])
 	{
-		//Job job = new Job();
 		String input_path = args[0];
 		String output_path = args[1];
-		String tmp[] = input_path.split("/");
-		Job job = new Job();
+		Job job = new Job(args[2], Integer.parseInt(args[3]));
 		job.set_fileInputPath(input_path);
 		job.set_fileOutputPath(output_path);
 		job.set_mapper(TestMapper.class);
 		job.set_reducer(TestReducer.class);
-	
-		job.submit();
-		
+    try {
+		  job.submit();
+    } catch (RemoteException e) {
+      e.printStackTrace();
+    }
 	}
-	
 }

@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.ParameterizedType;
 
-import conf.Config;
 import dfs.FileDownloader;
 import dfs.FileUploader;
 import dfs.NameNode;
@@ -200,7 +199,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	public void start_map(String job_id, String mapper_id, String block_id, String read_from_machine, Class<? extends Mapper> mapper) {
 		// TODO Auto-generated method stub
 		//mapper.map(key, val, context);
-		Task task = new Task(job_id, mapper_id);
+		Task task = new Task(job_id, mapper_id, registryHost, dfsPort);
 		task.set_taskTP(TASK_TP.MAPPER);
 		task.set_blockID(block_id);
 		task.set_reducerCT(reducer_ct);
@@ -240,7 +239,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	
 	public void start_reducer(String job_id, String reducer_id, String write_path, Class<? extends Reducer> reducer)
 	{
-		Task task = new Task(job_id, reducer_id);
+		Task task = new Task(job_id, reducer_id, registryHost, dfsPort);
 		task.set_taskTP(TASK_TP.REDUCER);
 		task.set_reducer_cls(reducer);
 		task.set_outputdir(write_path);
@@ -248,19 +247,17 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
 		taskID_exec.put(reducer_id, f1);
-		
-		
-			Msg msg = new Msg();
-			msg.setJob_id(job_id);
-			msg.setTask_id(reducer_id);
-			msg.setTask_tp(TASK_TP.REDUCER);
-			msg.setTask_stat(TASK_STATUS.RUNNING);			
-			msg.setMachine_id(String.valueOf(id));
-			msg.setOutput_path(write_path);
-			msg.set_future(f1);
-			this.heartbeats.offer(msg);
-		
-		
+
+
+		Msg msg = new Msg();
+		msg.setJob_id(job_id);
+		msg.setTask_id(reducer_id);
+		msg.setTask_tp(TASK_TP.REDUCER);
+		msg.setTask_stat(TASK_STATUS.RUNNING);			
+		msg.setMachine_id(String.valueOf(id));
+		msg.setOutput_path(write_path);
+		msg.set_future(f1);
+		this.heartbeats.offer(msg);
 	}
 
 	@Override

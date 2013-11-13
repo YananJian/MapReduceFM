@@ -16,8 +16,8 @@ def describe_dfs():
   cmd = list()
   cmd.append("java")
   cmd.append("dfs.DFSDescriber")
-  cmd.append(config['registry']['host'])
-  cmd.append(config['registry']['port'])
+  cmd.append(config['dfs_registry']['host'])
+  cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
 
 def put_file(argv):
@@ -29,11 +29,11 @@ def put_file(argv):
   cmd.append(argv[2])
   cmd.append(argv[3])
   cmd.append(argv[4])
-  cmd.append(config['registry']['host'])
-  cmd.append(config['registry']['port'])
+  cmd.append(config['dfs_registry']['host'])
+  cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
 
-def gett_file(argv):
+def get_file(argv):
   with open("../conf/config.json", "r") as infile:
     config = json.load(infile)
   cmd = list()
@@ -41,8 +41,8 @@ def gett_file(argv):
   cmd.append("dfs.FileDownloader")
   cmd.append(argv[2])
   cmd.append(argv[3])
-  cmd.append(config['registry']['host'])
-  cmd.append(config['registry']['port'])
+  cmd.append(config['dfs_registry']['host'])
+  cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
 
 if __name__ == "__main__":

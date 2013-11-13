@@ -27,7 +27,6 @@ import mr.JobStatus;
 import mr.Reducer;
 import mr.common.Constants.*;
 import mr.common.Msg;
-import conf.Config;
 import dfs.NameNode;
 
 

@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.*;
 
-import conf.Config;
 import dfs.DataNode;
 import dfs.NameNode;
 import mr.common.Constants.TASK_TP;
@@ -33,18 +32,16 @@ public class Task implements Callable {
 	int reducer_ct = 0;
 	TASK_TP type = null;
 	String output_dir = null;
-	String registryHost = Config.MASTER_IP;
-	int dfsPort = Config.DFS_PORT;
 	NameNode namenode = null;
 	String read_from_machine = null;
 	Registry dfs_registry = null;
 	
-	public Task(String job_id, String task_id) {
+	public Task(String job_id, String task_id, String host, int port) {
 		this.job_id = job_id;
 		this.task_id = task_id;	
 		
 		try {
-			dfs_registry = LocateRegistry.getRegistry(registryHost, dfsPort);
+			dfs_registry = LocateRegistry.getRegistry(host, port);
 			namenode = (NameNode) dfs_registry.lookup("NameNode");
 			
 		} catch (RemoteException e) {
