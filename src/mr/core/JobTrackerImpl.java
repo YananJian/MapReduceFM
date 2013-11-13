@@ -627,9 +627,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		System.out.println("This is JobTracker");
 	}
 
-	@Override
-	public Object call() {
-		// TODO Auto-generated method stub
+	public void health_check()
+	{
 		while(true)
 		{
 			Set set = alive_tasktrackers.entrySet();
@@ -655,6 +654,13 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				e.printStackTrace();
 			}
 		}
+		
+	}
+	@Override
+	public Object call() {
+		// TODO Auto-generated method stub
+		health_check();
+		return null;
 	}
 	
 	@Override
@@ -669,8 +675,6 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		String port = args[0];
 		jt.init(port);
 	}
-
-	
 
 	
 	

@@ -208,8 +208,8 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_read_from_machine(read_from_machine);
 		Future f1 = exec.submit(task);
 		taskID_exec.put(mapper_id, f1);
-		try {
-			HashMap<String, Integer> idSize = (HashMap<String, Integer>) f1.get();
+		
+			//HashMap<String, Integer> idSize = (HashMap<String, Integer>) f1.get();
 			
 			/*
 			 * After executing task, wrap the return value into Heartbeat Msg.
@@ -221,20 +221,15 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			msg.setJob_id(job_id);
 			msg.setTask_id(mapper_id);
 			msg.setTask_tp(TASK_TP.MAPPER);
-			msg.setTask_stat(TASK_STATUS.FINISHED);			
-			msg.setContent(idSize);
+			//msg.setTask_stat(TASK_STATUS.FINISHED);
+			msg.setTask_stat(TASK_STATUS.RUNNING);
+			msg.set_future(f1);
+			//msg.setContent(idSize);
 			System.out.println("Finished Mapper, machineID:"+id+"\ttaskID:"+mapper_id);
 			msg.setMachine_id(String.valueOf(id));
 			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
 			this.heartbeats.offer(msg);
 			
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
 		
 	}
@@ -250,60 +245,18 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		task.set_machineID(String.valueOf(id));
 		Future f1 = exec.submit(task);
 		taskID_exec.put(reducer_id, f1);
-		String ret_s = "";
-		try {
-			LinkedList<Record> contents = (LinkedList<Record>) f1.get();
-			Iterator<Record> iter = contents.iterator();
-			while(iter.hasNext())
-			{
-				Record r = iter.next();
-				String key = (String)r.getKey().getVal();
-				Iterable<Writable> vals = r.getValues();
-				for(Writable val: vals)
-				{
-					String s = key + "\t" + val.getVal().toString() +"\n";
-					ret_s += s;
-				}				
-			}
-			StringReader strr = new StringReader(ret_s);
-			BufferedReader br = new BufferedReader(strr);
-			FileUploader uploader = new FileUploader(br, reducer_id , 0, registryHost, dfsPort);
-			uploader.upload();
-			
-			//FileDownloader downloader = new FileDownloader(write_path+'/', reducer_id, registryHost, dfsPort);
-			FileDownloader downloader = new FileDownloader(reducer_id, reducer_id, registryHost, dfsPort);
-			downloader.download();
-			System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
-			/*
-			 * After executing task, wrap the return value into Heartbeat Msg.
-			 * Send Heartbeat to JobTracker.
-			 * Per Msg per Task.
-			 * 
-			 * */
+		
+		
 			Msg msg = new Msg();
 			msg.setJob_id(job_id);
 			msg.setTask_id(reducer_id);
 			msg.setTask_tp(TASK_TP.REDUCER);
-			msg.setTask_stat(TASK_STATUS.FINISHED);			
+			msg.setTask_stat(TASK_STATUS.RUNNING);			
 			msg.setMachine_id(String.valueOf(id));
-			
+			msg.setOutput_path(write_path);
+			msg.set_future(f1);
 			this.heartbeats.offer(msg);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NotBoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 		
 	}
 
@@ -313,6 +266,102 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		this.reducer_ct = ct;
 	}
 
+	private void check_mapper(Msg msg)
+	{
+		Future f = msg.get_future();
+		if (f != null)
+		    if(f.isDone())
+			{
+				try {
+					HashMap<String, Integer> idSize = (HashMap<String, Integer>) f.get();
+					msg.set_future(null);
+					msg.setContent(idSize);
+					msg.setTask_stat(TASK_STATUS.FINISHED);
+					jobTracker.heartbeat(msg);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		    else if (f.isCancelled())
+		    {
+		    	msg.setTask_stat(TASK_STATUS.TERMINATED);
+		    }
+		    else
+		    {
+		    	this.heartbeats.add(msg);
+		    }
+	}
+	
+	private void check_reducer(Msg msg)
+	{
+		String ret_s = "";
+		Future f1 = msg.get_future();
+		String reducer_id = msg.getTask_id();
+		String output_path = msg.getOutput_path();
+		if (f1 != null)
+			if (f1.isDone())
+			{
+				LinkedList<Record> contents;
+				try {
+					contents = (LinkedList<Record>) f1.get();
+				msg.set_future(null);
+				Iterator<Record> iter = contents.iterator();
+				while(iter.hasNext())
+				{
+					Record r = iter.next();
+					String key = (String)r.getKey().getVal();
+					Iterable<Writable> vals = r.getValues();
+					for(Writable val: vals)
+					{
+						String s = key + "\t" + val.getVal().toString() +"\n";
+						ret_s += s;
+					}				
+				}
+				StringReader strr = new StringReader(ret_s);
+				BufferedReader br = new BufferedReader(strr);
+				FileUploader uploader = new FileUploader(br, reducer_id , 0, registryHost, dfsPort);
+				uploader.upload();
+				
+				//FileDownloader downloader = new FileDownloader(write_path+'/', reducer_id, registryHost, dfsPort);
+				FileDownloader downloader = new FileDownloader(output_path + '/' + reducer_id, reducer_id, registryHost, dfsPort);
+				downloader.download();
+				System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
+				msg.setTask_stat(TASK_STATUS.FINISHED);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					//e.printStackTrace();
+				} catch (NotBoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			 else if (f1.isCancelled())
+			    {
+			    	msg.setTask_stat(TASK_STATUS.TERMINATED);
+			    }
+			    else
+			    {
+			    	this.heartbeats.add(msg);
+			    }
+		
+	}
+	
 	@Override
 	public Object call() throws RemoteException, InterruptedException {
 		// TODO Auto-generated method stub
@@ -321,7 +370,12 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			Msg msg = this.heartbeats.poll();			
 			if (msg != null)
 			{
-				System.out.println("Msg tp:"+msg.getMsg_tp()+",CPUs:"+msg.get_aval_procs());
+				if (msg.getTask_tp() == TASK_TP.MAPPER)
+					check_mapper(msg);
+				else if (msg.getTask_tp() == TASK_TP.REDUCER)
+					check_reducer(msg);
+				
+				//System.out.println("Msg tp:"+msg.getMsg_tp()+",CPUs:"+msg.get_aval_procs());
 				jobTracker.heartbeat(msg);
 			}	
 			else

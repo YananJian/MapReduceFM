@@ -1,5 +1,7 @@
 package mr.common;
 
+import java.util.concurrent.Future;
+
 import mr.common.Constants.JOB_STATUS;
 import mr.common.Constants.MSG_TP;
 import mr.common.Constants.TASK_STATUS;
@@ -18,12 +20,24 @@ public class Msg implements java.io.Serializable{
 	private String blk_fpath = null;
 	private String machine_id = null;
 	private Integer aval_procs = -1;
+	private Future future = null;
+	private String output_path = null;
 	//private HashMap<String, Integer> 
 	
 	public MSG_TP getMsg_tp() {
 		return msg_tp;
 	}
-
+	
+	public void set_future(Future future)
+	{
+		this.future = future;
+	}
+	
+	public Future get_future()
+	{
+		return this.future;
+	}
+	
 	public void setMsg_tp(MSG_TP msg_tp) {
 		this.msg_tp = msg_tp;
 	}
@@ -100,5 +114,13 @@ public class Msg implements java.io.Serializable{
 	public Integer get_aval_procs()
 	{
 		return this.aval_procs;
+	}
+
+	public String getOutput_path() {
+		return output_path;
+	}
+
+	public void setOutput_path(String output_path) {
+		this.output_path = output_path;
 	}
 }

@@ -13,7 +13,7 @@ public class Constants {
 	}
 	
 	public enum TASK_STATUS{
-		RUNNING, FINISHED, ERROR
+		RUNNING, FINISHED, ERROR, TERMINATED
 	}
 	
 	public enum TASK_TP{MAPPER, REDUCER}
