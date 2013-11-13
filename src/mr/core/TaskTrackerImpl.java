@@ -211,29 +211,26 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		Future f1 = exec.submit(task);
 		taskID_exec.put(mapper_id, f1);
 		
-			//HashMap<String, Integer> idSize = (HashMap<String, Integer>) f1.get();
-			
-			/*
-			 * After executing task, wrap the return value into Heartbeat Msg.
-			 * Send Heartbeat to JobTracker.
-			 * Per Msg per Task.
-			 * 
-			 * */
-			Msg msg = new Msg();
-			msg.setJob_id(job_id);
-			msg.setTask_id(mapper_id);
-			msg.setTask_tp(TASK_TP.MAPPER);
-			//msg.setTask_stat(TASK_STATUS.FINISHED);
-			msg.setTask_stat(TASK_STATUS.RUNNING);
-			msg.set_future(f1);
-			//msg.setContent(idSize);
-			System.out.println("Finished Mapper, machineID:"+id+"\ttaskID:"+mapper_id);
-			msg.setMachine_id(String.valueOf(id));
-			System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
-			this.heartbeats.offer(msg);
-			
+		//HashMap<String, Integer> idSize = (HashMap<String, Integer>) f1.get();
 		
-		
+		/*
+		 * After executing task, wrap the return value into Heartbeat Msg.
+		 * Send Heartbeat to JobTracker.
+		 * Per Msg per Task.
+		 * 
+		 * */
+		Msg msg = new Msg();
+		msg.setJob_id(job_id);
+		msg.setTask_id(mapper_id);
+		msg.setTask_tp(TASK_TP.MAPPER);
+		//msg.setTask_stat(TASK_STATUS.FINISHED);
+		msg.setTask_stat(TASK_STATUS.RUNNING);
+		msg.set_future(f1);
+	    //msg.setContent(idSize);
+		System.out.println("Finished Mapper, machineID:"+id+"\ttaskID:"+mapper_id);
+		msg.setMachine_id(String.valueOf(id));
+		System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
+		this.heartbeats.offer(msg);
 	}
 
 	
