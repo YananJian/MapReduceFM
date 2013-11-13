@@ -11,8 +11,8 @@ def start_datanode(argv):
   cmd.append(argv[1])
   cmd.append(config['datanode'][int(argv[1])]['dir'])
   cmd.append(config['datanode'][int(argv[1])]['port'])
-  cmd.append(config['registry']['host'])
-  cmd.append(config['registry']['port'])
+  cmd.append(config['dfs_registry']['host'])
+  cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
 
 if __name__ == "__main__":

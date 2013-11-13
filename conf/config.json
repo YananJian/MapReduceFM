@@ -3,14 +3,24 @@
   "replication": "3",
   "healthcheck interval": "5",
   "fsImage dir": "./fsImage",
-  "registry": {
+  "dfs_registry": {
     "host": "localhost",
     "port": "15640"
   },
+  "mr_registry": {
+    "host": "localhost",
+    "port": "12345"
+  },
   "namenode port": "15641",
+  "jobtracker port": "12346",
   "datanode": [
     { "port": "15462", "dir": "./0/" },
     { "port": "15463", "dir": "./1/" },
     { "port": "15464", "dir": "./2/" }
+  ],
+  "tasktracker": [
+    { "port": "12347", "dir": "./d0/"},
+    { "port": "12348", "dir": "./d1/"},
+    { "port": "12349", "dir": "./d2/"}
   ]
 }

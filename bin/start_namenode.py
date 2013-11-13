@@ -11,7 +11,7 @@ def start_namenode(argv):
   cmd.append(config['replication'])
   cmd.append(config['healthcheck interval'])
   cmd.append(config['block size'])
-  cmd.append(config['registry']['port'])
+  cmd.append(config['dfs_registry']['port'])
   cmd.append(str(len(config['datanode'])))
   cmd.append(config['fsImage dir'])
   cmd.append(config['namenode port'])

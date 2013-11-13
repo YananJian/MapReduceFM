@@ -32,11 +32,11 @@ import dfs.NameNode;
 
 
 public class JobTrackerImpl implements JobTracker, Callable{
-	String registryHost = Config.MASTER_IP;
-	int mrPort = Config.MR_PORT;
-	int dfsPort = Config.DFS_PORT;
+	String registryHost = null;
+	int mrPort = 0;
+	int dfsPort = 0;
 	NameNode namenode = null;
-	int reducer_ct = Config.REDUCER_NUM;
+	int reducer_ct = 0;
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
 	/*
 	 * mapper_machine: pair of job, mapperID and machineID
@@ -56,12 +56,16 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	Registry dfs_registry = null;
 	ExecutorService exec = null;
 	
-	public void init(String port)
+	public void init(String registryHost, String mrPort, String dfsPort, String selfPort, String reducer_ct)
 	{
 		try {
-			mr_registry = LocateRegistry.createRegistry(mrPort);
-			dfs_registry = LocateRegistry.getRegistry(registryHost, dfsPort);
-	        JobTracker stub = (JobTracker) UnicastRemoteObject.exportObject(this, Integer.valueOf(port));
+			this.mrPort = Integer.valueOf(mrPort);
+			this.dfsPort = Integer.valueOf(dfsPort);
+			this.registryHost = registryHost;
+			this.reducer_ct = Integer.valueOf(reducer_ct);
+			mr_registry = LocateRegistry.createRegistry(this.mrPort);
+			dfs_registry = LocateRegistry.getRegistry(this.registryHost, this.dfsPort);
+	        JobTracker stub = (JobTracker) UnicastRemoteObject.exportObject(this, Integer.valueOf(selfPort));
 	        mr_registry.rebind("JobTracker", stub);
 	        this.namenode = (NameNode) dfs_registry.lookup("NameNode");        
 	        System.out.println("Registered");
@@ -672,8 +676,13 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		JobTrackerImpl jt = new JobTrackerImpl();
-		String port = args[0];
-		jt.init(port);
+		String registryHost = args[0];
+		String mrPort = args[1];
+		String dfsPort = args[2];
+		String selfPort = args[3];
+		String reducer_ct = args[4];
+		
+		jt.init(registryHost, mrPort, dfsPort, selfPort, reducer_ct);
 	}
 
 	
