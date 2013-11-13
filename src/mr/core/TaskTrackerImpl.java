@@ -49,9 +49,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TaskTrackerImpl implements TaskTracker, Callable{
 	
-	String registryHost = Config.MASTER_IP;
-	int mrPort = Config.MR_PORT;
-	int dfsPort = Config.DFS_PORT;
+	String registryHost = null;
+	int mrPort = 0;
+	int dfsPort = 0;
 	JobTracker jobTracker = null;
 	int id = 0;
 	Registry mr_registry = null;
@@ -62,15 +62,18 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	//Queue<Msg> heartbeats = new LinkedList<Msg>();
 	LinkedBlockingQueue<Msg> heartbeats = new LinkedBlockingQueue<Msg>();
 	HashMap<String, Future> taskID_exec = new HashMap<String, Future>();
-	public TaskTrackerImpl(int id, String read_dir, String port, int reducer_ct)
+	public TaskTrackerImpl(String registryHost, String mrPort, String dfsPort, String selfPort, int id, String read_dir, int reducer_ct)
 	{
 		this.id = id;		
 		try {
-			mr_registry = LocateRegistry.getRegistry(registryHost, mrPort);
+			this.registryHost = registryHost;
+			this.mrPort = Integer.valueOf(mrPort);
+			this.dfsPort = Integer.valueOf(dfsPort);
+			mr_registry = LocateRegistry.getRegistry(registryHost, this.mrPort);
 			this.jobTracker = (JobTracker) mr_registry.lookup("JobTracker");
 			
 			this.read_dir = read_dir;
-			this.port = Integer.valueOf(port);
+			this.port = Integer.valueOf(selfPort);
 			this.reducer_ct = reducer_ct;
 			exec = Executors.newCachedThreadPool();
 			exec.submit(this);
@@ -397,11 +400,15 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	public static void main(String[] args) {
 		
 		// TaskTracker ID should be the same with the id of the DataNode
-		String taskNodeID = args[0];
-		String dir = args[1];
-		String port = args[2];
-		int reducer_ct = Integer.valueOf(args[3]);
-		TaskTrackerImpl tt = new TaskTrackerImpl(Integer.parseInt(taskNodeID), dir, port, reducer_ct);
+		String registryHost = args[0];
+		String mrPort = args[1];
+		String dfsPort = args[2];
+		String selfPort = args[3];
+		int id = Integer.valueOf(args[4]);
+		String read_dir = args[5];
+		int reducer_ct = Integer.valueOf(args[6]);
+		
+		TaskTrackerImpl tt = new TaskTrackerImpl(registryHost, mrPort, dfsPort, selfPort, id, read_dir, reducer_ct);
 		tt.init();
 	}
 	

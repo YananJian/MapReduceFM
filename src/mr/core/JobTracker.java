@@ -18,7 +18,7 @@ import dfs.DataNode;
 import dfs.NameNode;
 
 public interface JobTracker extends Remote, java.io.Serializable{
-	public void init(String port) throws RemoteException;
+	public void init(String registryHost, String mrPort, String dfsPort, String selfPort, String reducer_ct) throws RemoteException;
 	public void schedule(Job job) throws RemoteException;
 	//public void schedule_reducer(Job job) throws RemoteException;
 	public void heartbeat(Msg msg) throws RemoteException;
