@@ -267,7 +267,9 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	{
 		Future f = msg.get_future();
 		if (f != null)
-		    if(f.isDone())
+		{
+			if(f.isDone())
+		    
 			{
 				try {
 					HashMap<String, Integer> idSize = (HashMap<String, Integer>) f.get();
@@ -294,6 +296,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		    {
 		    	this.heartbeats.add(msg);
 		    }
+		}
 	}
 	
 	private void check_reducer(Msg msg)
@@ -303,12 +306,13 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		String reducer_id = msg.getTask_id();
 		String output_path = msg.getOutput_path();
 		if (f1 != null)
+		{
 			if (f1.isDone())
+			
 			{
 				LinkedList<Record> contents;
 				try {
 					contents = (LinkedList<Record>) f1.get();
-				msg.set_future(null);
 				Iterator<Record> iter = contents.iterator();
 				while(iter.hasNext())
 				{
@@ -323,14 +327,20 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 				}
 				StringReader strr = new StringReader(ret_s);
 				BufferedReader br = new BufferedReader(strr);
+				
 				FileUploader uploader = new FileUploader(br, reducer_id , 0, registryHost, dfsPort);
 				uploader.upload();
 				
-				//FileDownloader downloader = new FileDownloader(write_path+'/', reducer_id, registryHost, dfsPort);
-				FileDownloader downloader = new FileDownloader(output_path + '/' + reducer_id, reducer_id, registryHost, dfsPort);
+				System.out.println("output path:"+output_path + '/' + reducer_id);
+				System.out.println("reducerID:"+reducer_id);
+				System.out.println("Params to FileDownloader:"+reducer_id+' '+output_path + '/' + reducer_id+' '+registryHost+' '+dfsPort);
+				String writePath = output_path + "/" + reducer_id;
+				FileDownloader downloader = new FileDownloader(writePath, reducer_id, registryHost, dfsPort);
 				downloader.download();
 				System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
 				msg.setTask_stat(TASK_STATUS.FINISHED);
+				msg.set_future(null);
+				jobTracker.heartbeat(msg);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -346,7 +356,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 				} catch (NotBoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
+				} 
 			}
 			 else if (f1.isCancelled())
 			    {
@@ -356,7 +366,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			    {
 			    	this.heartbeats.add(msg);
 			    }
-		
+		}
 	}
 	
 	@Override
@@ -373,7 +383,8 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 					check_reducer(msg);
 				
 				//System.out.println("Msg tp:"+msg.getMsg_tp()+",CPUs:"+msg.get_aval_procs());
-				jobTracker.heartbeat(msg);
+				else
+					jobTracker.heartbeat(msg);
 			}	
 			else
 			{
