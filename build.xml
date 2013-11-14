@@ -24,6 +24,9 @@
   <target name="clean" description="clean up" >
     <!-- Delete the ${doc}, ${bin} and ${dist} directory trees -->
     <delete dir="${doc}"/>
+    <delete dir="${bin}/dfs"/>
+    <delete dir="${bin}/mr"/>
+    <delete dir="${bin}/testmr"/>
     <!-- <delete dir="${bin}"/> -->
   </target>
 </project>

@@ -152,7 +152,6 @@ public class Task implements Callable {
 				Record record = null;
 				while ((record = reducer_cls.getNext()) != null) {
 					  TextWritable key = (TextWritable) record.getKey();
-				      //System.out.println("After bootrap, key:"+key.getVal());
 				      Iterable<Writable> values = (Iterable<Writable>) record.getValues();
 				      reducer_cls.reduce(key, values, context);				      
 				}

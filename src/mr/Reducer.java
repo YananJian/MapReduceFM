@@ -44,12 +44,13 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                 String line = br.readLine();
                 if (line != null) {
                     /* skip empty file */
-                    String[] words = line.split("\t");
-                    /* HARD CODE TYPE TO BE TEXTWRITABLE */
+                    String[] tokens = line.split("\t");
+                    if (tokens.length < 2)
+                        continue;
                     TextWritable key = new TextWritable();
                     TextWritable value = new TextWritable();
-                    key.setVal(words[0]);
-                    value.setVal(words[1]);
+                    key.setVal(tokens[0]);
+                    value.setVal(tokens[1]);
                     Record record = new Record(key, filename);
                     record.addValue(value);
                     records.add(record);
@@ -83,12 +84,12 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                 br.readLine();
             String line = br.readLine();
             if (line != null) {
-                String[] words = line.split("\t");
+                String[] tokens = line.split("\t");
                 /* HARD CODE TYPE TO BE TEXTWRITABLE */
                 TextWritable k = new TextWritable();
                 TextWritable v = new TextWritable();
-                k.setVal(words[0]);
-                v.setVal(words[1]);
+                k.setVal(tokens[0]);
+                v.setVal(tokens[1]);
                 /* reinsert entry */
                 Record tmp = new Record(k, filename);
                 tmp.addValue(v);

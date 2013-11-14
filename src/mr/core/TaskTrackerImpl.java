@@ -169,7 +169,6 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		    br.close();
 		    File delf = new File(path + '/' + name);
 			delf.delete();
-			content.deleteCharAt(content.length()-1);
 		    return content.toString();
 			
 		} catch (FileNotFoundException e) {
