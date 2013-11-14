@@ -5,13 +5,13 @@ import sys
 def dfs(argv):
   if argv[1] == "describe":
     describe_dfs()
-  elif argv[1] == "putt":
+  elif argv[1] == "put_text":
     put_textfile(argv)
-  elif argv[1] == "gett":
+  elif argv[1] == "get_text":
     get_textfile(argv)
-  elif argv[1] == "putc":
+  elif argv[1] == "put_class":
     put_clsfile(argv)
-  elif argv[1] == "getc":
+  elif argv[1] == "get_class":
     get_clsfile(argv)
 
 def describe_dfs():
@@ -73,5 +73,6 @@ def get_clsfile(argv):
   cmd.append(config['dfs_registry']['host'])
   cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
+
 if __name__ == "__main__":
   dfs(sys.argv)
