@@ -5,10 +5,14 @@ import sys
 def dfs(argv):
   if argv[1] == "describe":
     describe_dfs()
-  elif argv[1] == "put":
-    put_file(argv)
-  elif argv[1] == "get":
-    get_file(argv)
+  elif argv[1] == "putt":
+    put_textfile(argv)
+  elif argv[1] == "gett":
+    get_textfile(argv)
+  elif argv[1] == "putc":
+    put_clsfile(argv)
+  elif argv[1] == "getc":
+    get_clsfile(argv)
 
 def describe_dfs():
   with open("../conf/config.json", "r") as infile:
@@ -20,7 +24,7 @@ def describe_dfs():
   cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
 
-def put_file(argv):
+def put_textfile(argv):
   with open("../conf/config.json", "r") as infile:
     config = json.load(infile)
   cmd = list()
@@ -33,7 +37,7 @@ def put_file(argv):
   cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
 
-def get_file(argv):
+def get_textfile(argv):
   with open("../conf/config.json", "r") as infile:
     config = json.load(infile)
   cmd = list()
@@ -45,5 +49,29 @@ def get_file(argv):
   cmd.append(config['dfs_registry']['port'])
   subprocess.call(cmd)
 
+def put_clsfile(argv):
+  with open("../conf/config.json", "r") as infile:
+    config = json.load(infile)
+  cmd = list()
+  cmd.append("java")
+  cmd.append("dfs.ClassUploader")
+  cmd.append(argv[2])
+  cmd.append(argv[3])
+  cmd.append(argv[4])
+  cmd.append(config['dfs_registry']['host'])
+  cmd.append(config['dfs_registry']['port'])
+  subprocess.call(cmd)
+
+def get_clsfile(argv):
+  with open("../conf/config.json", "r") as infile:
+    config = json.load(infile)
+  cmd = list()
+  cmd.append("java")
+  cmd.append("dfs.ClassDownloader")
+  cmd.append(argv[2])
+  cmd.append(argv[3])
+  cmd.append(config['dfs_registry']['host'])
+  cmd.append(config['dfs_registry']['port'])
+  subprocess.call(cmd)
 if __name__ == "__main__":
   dfs(sys.argv)
