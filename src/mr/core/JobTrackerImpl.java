@@ -526,7 +526,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
         float reducerProgress = 0;
         if (nReducer != 0)
          reducerProgress =  nFinishedReducer/nReducer*100;
-        sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "\n");
+        sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "%\n");
         return sb.toString();
     }
 
