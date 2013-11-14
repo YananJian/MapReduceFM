@@ -57,8 +57,8 @@ public class WordCount
     Job job = new Job(args[2], Integer.parseInt(args[3]));
     job.set_fileInputPath(input_path);
     job.set_fileOutputPath(output_path);
-    job.set_mapper(WordCountMapper.class);
-    job.set_reducer(WordCountReducer.class);
+    job.set_mapper(WordCountMapper.class, "testmr/WordCountMapper.class");
+    job.set_reducer(WordCountReducer.class, "testmr/WordCountReducer.class");
     try {
       job.submit();
     } catch (RemoteException e) {

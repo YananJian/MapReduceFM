@@ -16,14 +16,16 @@ import java.util.concurrent.*;
 
 import dfs.DataNode;
 import dfs.NameNode;
+import mr.common.Constants.TASK_STATUS;
 import mr.common.Constants.TASK_TP;
 import mr.io.IntWritable;
 import mr.io.TextWritable;
 import mr.io.Writable;
-
+import dfs.ClassDownloader;
 public class Task implements Callable {
 	Class<? extends Mapper> mapper = null;
 	Class<? extends Reducer> reducer = null;
+	
 	String job_id = null;
 	String task_id = null;
 	String read_dir = null;
@@ -97,9 +99,12 @@ public class Task implements Callable {
 	public Object call() throws RemoteException {
 		// TODO Auto-generated method stub
 		try {
+			if (Thread.interrupted())
+				return TASK_STATUS.TERMINATED;
 			if (type == TASK_TP.MAPPER)
 			{
 				System.out.println("------------Starting Mapper task in TaskTracker");
+				
 				Mapper<Object, Object, Object, Object> mapper_cls = mapper.newInstance();
 				String output_tmpdir = "/tmp/"+job_id+'/'+machine_id+'/';
 				Context context = new Context(job_id, task_id, reducer_ct, output_tmpdir);

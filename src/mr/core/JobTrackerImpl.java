@@ -147,7 +147,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 			mc_mp.put(mapper_id, machineID);
 			mapper_machine.put(job.get_jobId(), mc_mp);
 			System.out.println("prepare to start mapper");
-			tt.start_map(job.get_jobId(), mapper_id, blockID, read_from_machine, job.get_mapper());
+			tt.start_map(job.get_jobId(), mapper_id, blockID, read_from_machine, job.get_mapper_cls(), job.get_mapper_clspath());
 			
 			job.set_mapperStatus(mapper_id, TASK_STATUS.RUNNING);
 			job.inc_mapperct();
@@ -321,7 +321,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 					String r_path = "/tmp/" + jobID + '/' + curr + '/';
 					for (int i = 0;i< hashIDs.size(); i++)
 					{
-						List<String> names = r_taskTracker.read_dir(r_path+'/', hashIDs.get(i));
+						List<String> names = r_taskTracker.readDIR(r_path+'/', hashIDs.get(i));
 						for (int j = 0; j < names.size(); j++)
 						{
 							String content = r_taskTracker.readstr(r_path+'/', names.get(j));
@@ -354,10 +354,10 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				TaskTracker tt = this.alive_tasktrackers.get(mcID);
 				String reducer_id = job_id + "_r_" + String.valueOf(ct);
 				Job job = this.jobID_Job.get(job_id);
-				Class<? extends Reducer> reducer = job.get_reducer();
-				
+				Class<? extends Reducer> reducer = job.get_reducer_cls();
+				String cls_path = job.get_reducer_clspath();
 				try {
-					tt.start_reducer(job_id, reducer_id, write_path, reducer);
+					tt.start_reducer(job_id, reducer_id, write_path, reducer, cls_path);
 					Hashtable<String, String> rcmc = new Hashtable<String, String>();
 					rcmc.put(reducer_id, mcID);
 					reducer_machine.put(job_id, rcmc);
@@ -398,10 +398,17 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	
 	private void restart_jobs(String machineID)
 	{
+		System.out.println("--------In restart jobs");
 		Set<String> running_jobIDs = running_jobs.get(machineID);
+		System.out.println("Running jobIDs on broken machine "+machineID+":"+running_jobIDs.toString());
 		for(String jobID: running_jobIDs)
 		{
+			
 			Job job = this.jobID_Job.get(jobID);
+			HashMap<String, HashMap<String, Integer>> mc_hash_size = job_mc_hash_size.get(jobID);
+			if (mc_hash_size != null)
+				mc_hash_size.remove(machineID);
+			
 			System.out.println("Terminating Job:"+jobID+" because of machine:"+machineID+" is down");
 			terminate_job(jobID);
 			System.out.println("Restarting Job:"+jobID+" because of machine:"+machineID+" is down");
@@ -444,6 +451,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				if (is_task_finished(jobID, TASK_TP.MAPPER))
 				{
 					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
+					System.out.println("Before Shuffle, mcID_hashIDs:"+mcID_hashIDs.toString());
 					shuffle(jobID, mcID_hashIDs);
 					System.out.println("After Shuffle, mcID_hashIDs:"+mcID_hashIDs.toString());
 					start_reducer(jobID, this.jobID_outputdir.get(jobID), mcID_hashIDs);
@@ -496,9 +504,9 @@ public class JobTrackerImpl implements JobTracker, Callable{
         sb.append("Job ID: " + jobID + "\n");
         sb.append("Input File: " + job.get_fileName() + "\n");
         sb.append("Output Path: " + job.get_fileOutputPath() + "\n");
-        sb.append("Mapper: " + job.get_mapper().getName() + "\t");
+        sb.append("Mapper: " + job.get_mapper_cls().getName() + "\t");
         sb.append("#Mapper Instance: " + nMapper + "\n");
-        sb.append("Reducer: " + job.get_reducer().getName() + "\n");
+        sb.append("Reducer: " + job.get_reducer_cls().getName() + "\n");
         sb.append("#Reducer Instance: " + nReducer + "\n");
         int nFinishedMapper = 0;
         for (Map.Entry<String, TASK_STATUS> entry : mapperStatus.entrySet())
@@ -529,6 +537,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 
     private void terminate_mappers(String jobID, HashMap<String,TASK_STATUS> mapper_status)
     {
+    	System.out.println("----------In terminate_mappers");
     	Iterator miter = mapper_status.entrySet().iterator();
 		while(miter.hasNext())
 		{
@@ -542,8 +551,11 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				TaskTracker tt;
 				try {
 					tt = this.alive_tasktrackers.get(machineID);
-					tt.terminate(mapperID);
-					System.out.println("Task "+mapperID +" is terminated");
+					if (tt != null)
+					{
+						tt.terminate(mapperID);
+						System.out.println("Task "+mapperID +" is terminated");
+					}
 				} catch (AccessException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -560,6 +572,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
     }
     private void terminate_reducers(String jobID, HashMap<String,TASK_STATUS> reducer_status)
     {
+    	System.out.println("----------In terminate_reducers");
     	Iterator riter = reducer_status.entrySet().iterator();
 		while(riter.hasNext())
 		{
@@ -573,8 +586,11 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				TaskTracker tt;
 				try {					
 					tt = this.alive_tasktrackers.get(machineID);
-					tt.terminate(reducerID);
-					System.out.println("Task "+reducerID +" is terminated");
+					if (tt != null)
+					{
+						tt.terminate(reducerID);
+						System.out.println("Task "+reducerID +" is terminated");
+					}
 				} catch (AccessException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -610,6 +626,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
     
 	public void terminate_job(String jobID)
 	{
+		System.out.println("--------In terminate Job");
 		Job job = jobID_Job.get(jobID);
 		
 		HashMap<String,TASK_STATUS> mapper_status = null;
@@ -621,7 +638,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		terminate_mappers(jobID, mapper_status);
 		terminate_reducers(jobID, reducer_status);
 		job.set_jobStatus(JOB_STATUS.TERMINATED);
-		remove_from_running_jobs(jobID);
+		//remove_from_running_jobs(jobID);
 		
 	}
 	
@@ -648,6 +665,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 					// TODO Auto-generated catch block
 					System.out.println("Warning: TaskTracker on "+machineID+" has dead");
 					this.alive_tasktrackers.remove(machineID);
+					
 					restart_jobs(machineID);
 				}
 			}

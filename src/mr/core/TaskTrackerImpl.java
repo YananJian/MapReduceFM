@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.ParameterizedType;
 
+import dfs.ClassDownloader;
 import dfs.FileDownloader;
 import dfs.FileUploader;
 import dfs.NameNode;
@@ -133,7 +134,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		
 	}
 	
-	public List<String> read_dir(String path, String hashID)
+	public List<String> readDIR(String path, String hashID)
 	{
 		File dir = new File(path);
 		File[] files = dir.listFiles();
@@ -141,6 +142,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		for (int i=0; i< files.length; i++)
 		{
 			String name = files[i].getName();
+			System.out.println("In TaskTracker, name:"+name+"\thashID:"+hashID+"\tmachineID:"+id);
 			System.out.println("Name:"+name+", machineID:"+id);
 			String tmp[] = name.split("@");
 			if (tmp.length > 0)
@@ -196,9 +198,22 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	}
 	
 	@Override
-	public void start_map(String job_id, String mapper_id, String block_id, String read_from_machine, Class<? extends Mapper> mapper) {
+	public void start_map(String job_id, String mapper_id, String block_id, String read_from_machine, Class<? extends Mapper> mapper, String clspath) {
 		// TODO Auto-generated method stub
 		//mapper.map(key, val, context);
+		ClassDownloader dn = new ClassDownloader(clspath, clspath, registryHost, dfsPort);
+		try {
+			dn.download();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		Task task = new Task(job_id, mapper_id, registryHost, dfsPort);
 		task.set_taskTP(TASK_TP.MAPPER);
 		task.set_blockID(block_id);
@@ -234,8 +249,21 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	}
 
 	
-	public void start_reducer(String job_id, String reducer_id, String write_path, Class<? extends Reducer> reducer)
+	public void start_reducer(String job_id, String reducer_id, String write_path, Class<? extends Reducer> reducer, String clspath)
 	{
+		ClassDownloader dn = new ClassDownloader(clspath, clspath, registryHost, dfsPort);
+		try {
+			dn.download();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		Task task = new Task(job_id, reducer_id, registryHost, dfsPort);
 		task.set_taskTP(TASK_TP.REDUCER);
 		task.set_reducer_cls(reducer);
@@ -272,6 +300,12 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		    
 			{
 				try {
+					if (f.get() == TASK_STATUS.TERMINATED)
+					{
+						msg.setTask_stat(TASK_STATUS.TERMINATED);
+						msg.set_future(null);
+						jobTracker.heartbeat(msg);
+					}	
 					HashMap<String, Integer> idSize = (HashMap<String, Integer>) f.get();
 					msg.set_future(null);
 					msg.setContent(idSize);
@@ -291,6 +325,13 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		    else if (f.isCancelled())
 		    {
 		    	msg.setTask_stat(TASK_STATUS.TERMINATED);
+		    	msg.set_future(null);
+				try {
+					jobTracker.heartbeat(msg);
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		    }
 		    else
 		    {
@@ -307,12 +348,17 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		String output_path = msg.getOutput_path();
 		if (f1 != null)
 		{
-			if (f1.isDone())
-			
+			if (f1.isDone())			
 			{
 				LinkedList<Record> contents;
 				try {
-					contents = (LinkedList<Record>) f1.get();
+					if (f1.get() == TASK_STATUS.TERMINATED)
+					{
+						msg.setTask_stat(TASK_STATUS.TERMINATED);
+						msg.set_future(null);
+						jobTracker.heartbeat(msg);
+					}	
+				contents = (LinkedList<Record>) f1.get();
 				Iterator<Record> iter = contents.iterator();
 				while(iter.hasNext())
 				{
@@ -334,9 +380,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 				System.out.println("output path:"+output_path + '/' + reducer_id);
 				System.out.println("reducerID:"+reducer_id);
 				System.out.println("Params to FileDownloader:"+reducer_id+' '+output_path + '/' + reducer_id+' '+registryHost+' '+dfsPort);
-				String writePath = output_path + "/" + reducer_id;
-				FileDownloader downloader = new FileDownloader(writePath, reducer_id, registryHost, dfsPort);
-				downloader.download();
+				
 				System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
 				msg.setTask_stat(TASK_STATUS.FINISHED);
 				msg.set_future(null);
@@ -361,6 +405,13 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			 else if (f1.isCancelled())
 			    {
 			    	msg.setTask_stat(TASK_STATUS.TERMINATED);
+			    	try {
+			    		msg.set_future(null);
+						jobTracker.heartbeat(msg);
+					} catch (RemoteException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 			    }
 			    else
 			    {

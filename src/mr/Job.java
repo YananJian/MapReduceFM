@@ -17,6 +17,8 @@ public class Job implements java.io.Serializable{
 	private static final long serialVersionUID = 1L;
 	Class<? extends Mapper<?, ?, ?, ?>> mapper = null;
 	Class<? extends Reducer<?, ?, ?, ?>> reducer = null;
+	String mapper_clspath = null;
+	String reducer_clspath = null;
 	String fileInputPath = null;
 	String fileOutputPath = null;
 	String fname = null;
@@ -100,25 +102,38 @@ public class Job implements java.io.Serializable{
 		return this.job_id;
 	}
 	
-	public void set_mapper(Class<? extends Mapper<?, ?, ?, ?>> class1)
+	public void set_mapper(Class<? extends Mapper<?, ?, ?, ?>> class1, String class_path)
 	{
 		this.mapper = class1;
+		this.mapper_clspath = class_path;
 	}
 	
-	public Class<? extends Mapper<?, ?, ?, ?>> get_mapper()
+	public Class<? extends Mapper<?, ?, ?, ?>> get_mapper_cls()
 	{
 		return this.mapper;
 	}
 	
-	public void set_reducer(Class<? extends Reducer<?, ?, ?, ?>> class1)
+	public String get_mapper_clspath()
 	{
-		this.reducer = class1;
+		return mapper_clspath;
 	}
 	
-	public Class<? extends Reducer<?, ?, ?, ?>> get_reducer()
+	public void set_reducer(Class<? extends Reducer<?, ?, ?, ?>> class1, String class_path)
+	{
+		this.reducer = class1;
+		this.reducer_clspath = class_path;
+	}
+	
+	public String get_reducer_clspath()
+	{
+		return reducer_clspath;
+	}
+	
+	public Class<? extends Reducer<?, ?, ?, ?>> get_reducer_cls()
 	{
 		return this.reducer;
 	}
+	
 	
 	public void set_fileInputPath(String path)
 	{
