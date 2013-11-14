@@ -16,4 +16,5 @@ public interface TaskTracker extends Remote, java.io.Serializable {
 	public List<String> readDIR(String path, String hashID) throws RemoteException;
 	public void terminate(String taskID) throws RemoteException;
 	public void heartbeat() throws RemoteException;
+	public void terminate_self() throws RemoteException;
 }

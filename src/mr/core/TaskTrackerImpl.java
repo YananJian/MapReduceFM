@@ -59,6 +59,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 	ExecutorService exec = null;
 	int reducer_ct = 0;
 	int port = 0;
+	boolean terminated = false;
 	//Queue<Msg> heartbeats = new LinkedList<Msg>();
 	LinkedBlockingQueue<Msg> heartbeats = new LinkedBlockingQueue<Msg>();
 	HashMap<String, Future> taskID_exec = new HashMap<String, Future>();
@@ -435,6 +436,11 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		// TODO Auto-generated method stub
 		
 		
+	}
+	@Override
+	public void terminate_self() throws RemoteException
+	{
+		UnicastRemoteObject.unexportObject(this, true); 
 	}
 	
 	public static void main(String[] args) {

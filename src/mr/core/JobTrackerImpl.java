@@ -36,6 +36,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	int dfsPort = 0;
 	NameNode namenode = null;
 	int reducer_ct = 0;
+	boolean terminated = false;
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
 	/*
 	 * mapper_machine: pair of job, mapperID and machineID
@@ -477,6 +478,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 					System.out.println("All Reducer finished");
 					job.set_jobStatus(JOB_STATUS.FINISHED);
 					remove_from_running_jobs(jobID);
+					//job_mc_hash_size.remove(jobID);
 					//JobStatus jstatus = this.job_status.get(jobID);
 					//jstatus.set_job_stat(JOB_STATUS.FINISHED);
 					
@@ -493,6 +495,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
     @Override
 	public String desc_job(String jobID) throws RemoteException
 	{
+    	if (terminated)
+  	      throw new RemoteException("JobTracker terminating");
         /* retrieve necessary data */
         Job job = jobID_Job.get(jobID);
         int nMapper = job.get_mapperct();
@@ -529,6 +533,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
     @Override
     public String desc_jobs() throws RemoteException
     {
+    	if (terminated)
+    	      throw new RemoteException("JobTracker terminating");
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Job> entry : jobID_Job.entrySet()) {
             System.out.println(sb.toString());
@@ -693,6 +699,44 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	public void register(String machineID, TaskTracker tt) throws RemoteException {
 		// TODO Auto-generated method stub
 		alive_tasktrackers.put(machineID, tt);
+	}
+	
+	private void terminate_allJobs()
+	{
+		Set jobset = jobID_Job.entrySet();
+		Iterator iter = jobset.iterator();
+		while(iter.hasNext())
+		{
+			Entry entry = (Entry)iter.next();
+			String jobID = (String) entry.getKey();
+			Job job = (Job) entry.getValue();
+			if (job.get_jobStatus() == JOB_STATUS.RUNNING)
+				terminate_job(jobID);
+		}
+	}
+	
+	@Override
+	public void terminate() throws RemoteException{
+		terminated = true;
+		terminate_allJobs();
+		Set s = alive_tasktrackers.entrySet();
+		Iterator iter = s.iterator();
+		while(iter.hasNext())
+		{
+			Entry entry = (Entry)iter.next();
+			String machineID = (String)entry.getKey();
+			TaskTracker tt = (TaskTracker)entry.getValue();
+			tt.terminate_self();
+		}
+		try {
+			mr_registry.unbind("JobTracker");
+			UnicastRemoteObject.unexportObject(this, true);
+		    UnicastRemoteObject.unexportObject(mr_registry, true);
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	      
 	}
 	
 	public static void main(String[] args) {

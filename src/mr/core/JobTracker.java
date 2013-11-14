@@ -25,4 +25,5 @@ public interface JobTracker extends Remote, java.io.Serializable{
     public String desc_jobs() throws RemoteException;
     public void print() throws RemoteException;
     public void register(String machineID, TaskTracker tt) throws RemoteException;
+    public void terminate() throws RemoteException;
 }
