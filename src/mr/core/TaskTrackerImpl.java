@@ -381,9 +381,6 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 				} catch (RemoteException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
 				} catch (NotBoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
