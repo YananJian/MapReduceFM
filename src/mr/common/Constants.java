@@ -16,5 +16,7 @@ public class Constants {
 		RUNNING, FINISHED, ERROR, TERMINATED
 	}
 	
-	public enum TASK_TP{MAPPER, REDUCER}
+	public enum TASK_TP{
+        MAPPER, REDUCER
+    }
 }

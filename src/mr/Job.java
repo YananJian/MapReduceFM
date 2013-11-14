@@ -15,8 +15,8 @@ import mr.common.Constants.*;
 public class Job implements java.io.Serializable{
 	
 	private static final long serialVersionUID = 1L;
-	Class<? extends Mapper<?, ?, ?, ?>> mapper = null;
-	Class<? extends Reducer<?, ?, ?, ?>> reducer = null;
+	Class<? extends Mapper> mapper = null;
+	Class<? extends Reducer> reducer = null;
 	String mapper_clspath = null;
 	String reducer_clspath = null;
 	String fileInputPath = null;
@@ -102,13 +102,13 @@ public class Job implements java.io.Serializable{
 		return this.job_id;
 	}
 	
-	public void set_mapper(Class<? extends Mapper<?, ?, ?, ?>> class1, String class_path)
+	public void set_mapper(Class<? extends Mapper> class1, String class_path)
 	{
 		this.mapper = class1;
 		this.mapper_clspath = class_path;
 	}
 	
-	public Class<? extends Mapper<?, ?, ?, ?>> get_mapper_cls()
+	public Class<? extends Mapper> get_mapper_cls()
 	{
 		return this.mapper;
 	}
@@ -118,7 +118,7 @@ public class Job implements java.io.Serializable{
 		return mapper_clspath;
 	}
 	
-	public void set_reducer(Class<? extends Reducer<?, ?, ?, ?>> class1, String class_path)
+	public void set_reducer(Class<? extends Reducer> class1, String class_path)
 	{
 		this.reducer = class1;
 		this.reducer_clspath = class_path;
@@ -129,7 +129,7 @@ public class Job implements java.io.Serializable{
 		return reducer_clspath;
 	}
 	
-	public Class<? extends Reducer<?, ?, ?, ?>> get_reducer_cls()
+	public Class<? extends Reducer> get_reducer_cls()
 	{
 		return this.reducer;
 	}

@@ -24,8 +24,8 @@ public class Context {
 	private LinkedList<Record> contents = new LinkedList<Record>();
     private int numBuffers = 0;
     private String bufferPathPrefix = "";
-    private final int kBufferSize = 1000;
 	private TASK_TP task_tp = null;
+    private final int kBufferSize = 1000;
     
     
 	public Context(String job_id, String task_id, int reducer_ct, String dir, TASK_TP tp)
@@ -53,9 +53,9 @@ public class Context {
 		return this.task_id;
 	}
 	
-	public LinkedList<Record> get_Contents()
+	public BufferedReader getContents() throws IOException
 	{
-		return contents;
+        return new BufferedReader(new FileReader(bufferPathPrefix + numBuffers));
 	}
 	
 	protected void partition() throws IOException
@@ -136,21 +136,28 @@ public class Context {
 		contents.add(record);		
 
         if (contents.size() >= kBufferSize)
-            /* buffer is full, sort and dump to tmp file */
+            /* buffer is full, dump to tmp file */
             writeBuffer();
 	}
 
     private void writeBuffer()
     {
+        /* sort records */
         Collections.sort(contents);
         File pathFile = new File(bufferPathPrefix);
         if (!pathFile.exists())
             pathFile.mkdirs();
         try {
             File file = new File(bufferPathPrefix + numBuffers++);
-            BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-            for (Record r : contents)
-                bw.write(r.getKey().getVal() + "\t" + r.getValues().iterator().next().getVal() + "\t" + r.getFileName() + "\n");
+            if (task_tp == TASK_TP.MAPPER)
+                numBuffers++;
+            BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
+            for (Record r : contents) {
+                bw.write(r.getKey().getVal() + "\t" + r.getValues().iterator().next().getVal());
+                if (task_tp == TASK_TP.MAPPER)
+                    bw.write("\t" + r.getFileName());
+                bw.write("\n");
+            }
             bw.close();
             contents.clear();
         } catch (IOException e) {

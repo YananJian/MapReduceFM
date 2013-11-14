@@ -155,7 +155,7 @@ public class Task implements Callable {
 				      Iterable<Writable> values = (Iterable<Writable>) record.getValues();
 				      reducer_cls.reduce(key, values, context);				      
 				}
-				return context.get_Contents();
+				return context.getContents();
 			}
 		} catch (InstantiationException e) {
 			// TODO Auto-generated catch block

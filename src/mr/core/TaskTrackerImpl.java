@@ -356,33 +356,18 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 						msg.set_future(null);
 						jobTracker.heartbeat(msg);
 					}	
-				contents = (LinkedList<Record>) f1.get();
-				Iterator<Record> iter = contents.iterator();
-				while(iter.hasNext())
-				{
-					Record r = iter.next();
-					String key = (String)r.getKey().getVal();
-					Iterable<Writable> vals = r.getValues();
-					for(Writable val: vals)
-					{
-						String s = key + "\t" + val.getVal().toString() +"\n";
-						ret_s += s;
-					}				
-				}
-				StringReader strr = new StringReader(ret_s);
-				BufferedReader br = new BufferedReader(strr);
 				
-				FileUploader uploader = new FileUploader(br, reducer_id , 0, registryHost, dfsPort);
-				uploader.upload();
-				
-				System.out.println("output path:"+output_path + '/' + reducer_id);
-				System.out.println("reducerID:"+reducer_id);
-				System.out.println("Params to FileDownloader:"+reducer_id+' '+output_path + '/' + reducer_id+' '+registryHost+' '+dfsPort);
-				
-				System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
-				msg.setTask_stat(TASK_STATUS.FINISHED);
-				msg.set_future(null);
-				jobTracker.heartbeat(msg);
+    				FileUploader uploader = new FileUploader((BufferedReader) f1.get(), reducer_id , 0, registryHost, dfsPort);
+    				uploader.upload();
+
+    				System.out.println("output path:"+output_path + '/' + reducer_id);
+    				System.out.println("reducerID:"+reducer_id);
+    				System.out.println("Params to FileDownloader:"+reducer_id+' '+output_path + '/' + reducer_id+' '+registryHost+' '+dfsPort);	
+
+				    System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
+				    msg.setTask_stat(TASK_STATUS.FINISHED);
+				    msg.set_future(null);
+				    jobTracker.heartbeat(msg);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
