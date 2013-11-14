@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import mr.common.Constants.TASK_TP;
 import mr.io.Writable;
 import mr.io.TextWritable;
 
@@ -24,14 +25,17 @@ public class Context {
     private int numBuffers = 0;
     private String bufferPathPrefix = "";
     private final int kBufferSize = 1000;
-	
-	public Context(String job_id, String task_id, int reducer_ct, String dir)
+	private TASK_TP task_tp = null;
+    
+    
+	public Context(String job_id, String task_id, int reducer_ct, String dir, TASK_TP tp)
 	{
 		this.job_id = job_id;
 		this.task_id = task_id;
 		this.reducer_ct = reducer_ct;
 		this.dir = dir;
         this.bufferPathPrefix = "/tmp/" + task_id + "tmp/";
+        this.task_tp = tp;
 	}
 	
 	public HashMap<String, Integer> get_idSize()

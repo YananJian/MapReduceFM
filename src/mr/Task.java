@@ -107,7 +107,7 @@ public class Task implements Callable {
 				
 				Mapper<Object, Object, Object, Object> mapper_cls = mapper.newInstance();
 				String output_tmpdir = "/tmp/"+job_id+'/'+machine_id+'/';
-				Context context = new Context(job_id, task_id, reducer_ct, output_tmpdir);
+				Context context = new Context(job_id, task_id, reducer_ct, output_tmpdir, TASK_TP.MAPPER);
 				System.out.println("Executing task, job id:" + job_id
 					+ ", mapper_id:" + task_id);
 				/* read from block */
@@ -140,7 +140,7 @@ public class Task implements Callable {
 				System.out.println("------------Starting Reducer task in Task");
 				Reducer<Object, Object, Object, Object> reducer_cls = reducer.newInstance();
 				//String output_tmpdir = "tmp/"+job_id+'/'+machine_id+'/';
-				Context context = new Context(job_id, task_id, reducer_ct, output_dir);
+				Context context = new Context(job_id, task_id, reducer_ct, output_dir, TASK_TP.REDUCER);
 				System.out.println("Executing task, job id:" + job_id
 					+ ", reducer_id:" + task_id);
 				String input_dir = "/tmp/"+job_id+'/'+machine_id+'/';
