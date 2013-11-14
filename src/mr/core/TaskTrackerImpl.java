@@ -242,9 +242,7 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		msg.setTask_stat(TASK_STATUS.RUNNING);
 		msg.set_future(f1);
 	    //msg.setContent(idSize);
-		System.out.println("Finished Mapper, machineID:"+id+"\ttaskID:"+mapper_id);
 		msg.setMachine_id(String.valueOf(id));
-		System.out.println("ADDING HEARTBEAT MSG INTO QUEUE");
 		this.heartbeats.offer(msg);
 	}
 
