@@ -58,7 +58,10 @@ public class Context {
         /* flush remaining contents */
         if (!contents.isEmpty())
             writeBuffer();
-        return new BufferedReader(new FileReader(bufferPathPrefix + "0"));
+        if (numBuffers > 0)
+            return new BufferedReader(new FileReader(bufferPathPrefix + "0"));
+        else
+            return null;
 	}
 	
 	protected void partition() throws IOException
