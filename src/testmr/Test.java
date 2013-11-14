@@ -16,11 +16,6 @@ public class Test {
 		public void map(TextWritable key, TextWritable val, Context context) {
 			TextWritable _val = new TextWritable();
 			_val.setVal("1");
-      try {
-        Thread.sleep(5000);
-      } catch (Exception e) {
-        // igore
-      }
 			context.write(key, _val);
 		}		
 	}
@@ -34,11 +29,6 @@ public class Test {
 			for (Writable val:values)
 			{
 				TextWritable _val = (TextWritable) val;
-        try {
-          Thread.sleep(5000);
-        } catch (Exception e) {
-          // ignore
-        }
 				sum += Integer.parseInt(_val.getVal());
 			}
 			res_sum.setVal(sum);

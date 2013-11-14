@@ -53,15 +53,12 @@ public class Context {
 		return this.task_id;
 	}
 	
-	public BufferedReader getContents() throws IOException
+	public String getContents() throws IOException
 	{
         /* flush remaining contents */
         if (!contents.isEmpty())
             writeBuffer();
-        if (numBuffers > 0)
-            return new BufferedReader(new FileReader(bufferPathPrefix + "0"));
-        else
-            return null;
+        return bufferPathPrefix + "0";
 	}
 	
 	protected void partition() throws IOException
