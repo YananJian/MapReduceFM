@@ -26,18 +26,13 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         records = new LinkedList<Record>();
     }
     
-    /*public void reduce(K2 k2, Iterable<Writable> values, Context context)
-    {
-    	System.out.println("Parent Reducer!");
-    	
-    }*/
     public void reduce(TextWritable key, Iterable<Writable> values,
 			Context context) {
-		// TODO Auto-generated method stub
 		
 	}
+
     public void bootstrap() {
-        /* insert one record/file into recordQueue */
+        /* insert one record/file into records */
         File dir = new File(dirname);
         File[] files = dir.listFiles();
         for (File file : files) {

@@ -504,12 +504,16 @@ public class JobTrackerImpl implements JobTracker, Callable{
         for (Map.Entry<String, TASK_STATUS> entry : mapperStatus.entrySet())
             if (entry.getValue() == TASK_STATUS.FINISHED)
                 nFinishedMapper++;
-        float mapperProgress = nFinishedMapper/nMapper*100;
+        float mapperProgress = 0;
+        if (nMapper != 0)
+          mapperProgress = nFinishedMapper/nMapper*100;
         int nFinishedReducer = 0;
         for (Map.Entry<String, TASK_STATUS> entry : reducerStatus.entrySet())
             if (entry.getValue() == TASK_STATUS.FINISHED)
                 nFinishedReducer++;
-        float reducerProgress = nFinishedReducer/nReducer*100;
+        float reducerProgress = 0;
+        if (nReducer != 0)
+         reducerProgress =  nFinishedReducer/nReducer*100;
         sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "\n");
         return sb.toString();
     }

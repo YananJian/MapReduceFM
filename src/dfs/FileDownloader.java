@@ -50,6 +50,7 @@ public class FileDownloader
     Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
     NameNode namenode = (NameNode) registry.lookup("NameNode");
     Map<Integer, List<Integer>> blocks = namenode.getAllBlocks(filename);
+    /* create directories if not exist */
     String dir = new String(path);
     int idx = dir.lastIndexOf("/");
     if (idx > 0) {

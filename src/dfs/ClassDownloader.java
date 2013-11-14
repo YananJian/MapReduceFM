@@ -49,6 +49,15 @@ public class ClassDownloader
     Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
     NameNode namenode = (NameNode) registry.lookup("NameNode");
     Map<Integer, List<Integer>> blocks = namenode.getAllBlocks(filename);
+    /* create directories if not exist */
+    String dir = new String(path);
+    int idx = dir.lastIndexOf("/");
+    if (idx > 0) {
+      dir = dir.substring(0, idx);
+      File dirFile = new File(dir);
+      if (!dirFile.exists())
+        dirFile.mkdirs();
+    }
     FileOutputStream fileOutputStream = new FileOutputStream(new File(path));
     for (Map.Entry<Integer, List<Integer>> entry : blocks.entrySet()) {
       int blockId = entry.getKey();

@@ -14,7 +14,7 @@ def start_tasktracker(argv):
   cmd.append(config['tasktracker'][int(argv[1])]['port'])
   cmd.append(argv[1])
   cmd.append(config['tasktracker'][int(argv[1])]['dir'])
-  cmd.append(config['replication'])
+  cmd.append(config['reducer'])
   subprocess.call(cmd)
 
 if __name__ == "__main__":

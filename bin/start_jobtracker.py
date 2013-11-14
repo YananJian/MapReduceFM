@@ -12,7 +12,7 @@ def start_jobtracker(argv):
   cmd.append(config['mr_registry']['port'])
   cmd.append(config['dfs_registry']['port'])
   cmd.append(config['jobtracker port'])
-  cmd.append(config['replication'])
+  cmd.append(config['reducer'])
   subprocess.call(cmd)
 
 if __name__ == "__main__":
