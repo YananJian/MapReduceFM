@@ -38,9 +38,10 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	int reducer_ct = 0;
 	boolean terminated = false;
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
-	/*
+	/**
 	 * mapper_machine: pair of job, mapperID and machineID
 	 * running_jobs: pair of machineID, list of running jobIDs
+	 * 
 	 * */
 	Hashtable<String, Hashtable<String, String>> mapper_machine = new Hashtable<String, Hashtable<String, String>>();
 	Hashtable<String, Hashtable<String, String>> reducer_machine = new Hashtable<String, Hashtable<String, String>> ();
@@ -56,6 +57,15 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	Registry dfs_registry = null;
 	ExecutorService exec = null;
 	
+  /**
+   * Init JobTracker, create mrRegistry
+   * @param registryHost mapreducefm's Registry host address
+   * @param mrPort mapreducefm's registry port number
+   * @param dfsPort dfs's port number
+   * @param selfPort mapreducefm's port number
+   * @param reducer_ct reducer numbers customized by client
+   * @throws RemoteException
+   */
 	public void init(String registryHost, String mrPort, String dfsPort, String selfPort, String reducer_ct)
 	{
 		try {
@@ -78,16 +88,16 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	      }
 	}
 	
-	/*
+	/**
 	 * preset_reducer:
 	 * Sum the sizes of partitions given back by mapper tasks,
 	 * Choose the Top N (N = num of reducers) sizes, for each partition,
 	 * allocate reducers on the machine that has most resources.
-	 * 
+	 *
 	 * Eg. We have 2 reducers.
-	 * Machine A has partition k1 -> 1KB, k2 -> 1MB
-	 * Machine B has partition k1 -> 1MB, k2 -> 1GB
-	 * Machine C has partition k1 -> 1GB, k2 -> 1TB
+	 * Machine A has partition k1 = 1KB, k2 = 1MB
+	 * Machine B has partition k1 = 1MB, k2 = 1GB
+	 * Machine C has partition k1 = 1GB, k2 = 1TB
 	 * sum(k1) = 1GB + 1MB + 1KB
 	 * sum(k2) = 1TB + 1GB + 1MB
 	 * 
@@ -112,29 +122,26 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		    lst.add(machineID);
 		    partition_res.put(machineID, lst);
 		} 
-		// Since I have to think more about how to optimize it, let's assume hashID = machineID
 		
 		return partition_res;
 		
 	}
 
-	
-	public void update_job_status(String job_id, String task_id, TASK_TP tp, JOB_STATUS status)
-	{
-		JobStatus jstatus = this.job_status.get(job_id);
-		if (tp == TASK_TP.MAPPER)
-			jstatus.set_mapper_status(task_id, status);
-		else if (tp == TASK_TP.REDUCER)
-			jstatus.set_reducer_status(task_id, status);
-		this.job_status.put(job_id, jstatus);
-	}
-	
+	/**
+	 * Allocate mapper tasks to alive tasktrackers
+	 * @param machineID the ID of machine which alive tasktracker is running on
+	 * @param mapper_id ID of mapper
+	 * @param blockID ID of block
+	 * @param read_from_machine the machineID of which block is stored and to be read by tasktracker. 
+	 * @param job job which has to be scheduled
+	 * @param mc_mp hashmap of machineID and mapper_id
+	 */
 	public void allocate_mapper(String machineID, String mapper_id, String blockID, String read_from_machine, Job job, Hashtable<String, String> mc_mp)
 	{
 		TaskTracker tt;
 		try {
 			tt = this.alive_tasktrackers.get(machineID);
-			 /* 
+			    /** 
 			    * TaskTracker has to hash key to an ID based on REDUCER_NUM 
 			    * Thus to ensure same key on different mappers will have the same ID
 			    * So finally same key will go to the same reducer.
