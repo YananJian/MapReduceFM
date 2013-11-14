@@ -100,7 +100,7 @@ public class Context {
             String key = (String) record.getKey().getVal();
             String value = (String) record.getValues().iterator().next().getVal();
             String bufferId = record.getFileName();
-            int partitionId = key.hashCode() % reducer_ct;
+            int partitionId = Math.abs(key.hashCode() % reducer_ct);
             String path = dir + task_id + '@' + String.valueOf(partitionId);
             String str = key + "\t" + value + "\n";
             partitionFiles.get(partitionId).write(str);

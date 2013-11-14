@@ -30,9 +30,11 @@ public class WikiMediaFilter
       boolean isImage = tokens[1].matches(PATTERN_IMAGE);
       boolean isBoilerplate = tokens[1].matches(PATTERN_BOILERPLATE);
       if (isEnglish && !isSpecial && !isLowercase && !isImage && !isBoilerplate) {
+        TextWritable k = new TextWritable(); 
         TextWritable v = new TextWritable();
+        k.setVal(tokens[1]);
         v.setVal(tokens[2]);
-        context.write(key, v);
+        context.write(k, v);
       }
     }
   }
