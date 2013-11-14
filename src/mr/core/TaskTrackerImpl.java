@@ -357,12 +357,13 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 						jobTracker.heartbeat(msg);
 					}	
 				
-    				FileUploader uploader = new FileUploader((BufferedReader) f1.get(), reducer_id , 0, registryHost, dfsPort);
+                    String path = output_path + '/' + reducer_id;
+    				FileUploader uploader = new FileUploader((BufferedReader) f1.get(), path, 0, registryHost, dfsPort);
     				uploader.upload();
 
-    				System.out.println("output path:"+output_path + '/' + reducer_id);
+    				System.out.println("output path:"+path);
     				System.out.println("reducerID:"+reducer_id);
-    				System.out.println("Params to FileDownloader:"+reducer_id+' '+output_path + '/' + reducer_id+' '+registryHost+' '+dfsPort);	
+    				System.out.println("Params to FileDownloader:"+reducer_id+' '+path+' '+registryHost+' '+dfsPort);	
 
 				    System.out.println("Writing to DFS, REDUCER ID:"+reducer_id);
 				    msg.setTask_stat(TASK_STATUS.FINISHED);

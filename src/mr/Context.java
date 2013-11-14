@@ -55,7 +55,10 @@ public class Context {
 	
 	public BufferedReader getContents() throws IOException
 	{
-        return new BufferedReader(new FileReader(bufferPathPrefix + numBuffers));
+        /* flush remaining contents */
+        if (!contents.isEmpty())
+            writeBuffer();
+        return new BufferedReader(new FileReader(bufferPathPrefix + "0"));
 	}
 	
 	protected void partition() throws IOException
@@ -148,7 +151,7 @@ public class Context {
         if (!pathFile.exists())
             pathFile.mkdirs();
         try {
-            File file = new File(bufferPathPrefix + numBuffers++);
+            File file = new File(bufferPathPrefix + numBuffers);
             if (task_tp == TASK_TP.MAPPER)
                 numBuffers++;
             BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));

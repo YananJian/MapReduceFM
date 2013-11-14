@@ -22,6 +22,7 @@ import mr.io.IntWritable;
 import mr.io.TextWritable;
 import mr.io.Writable;
 import dfs.ClassDownloader;
+
 public class Task implements Callable {
 	Class<? extends Mapper> mapper = null;
 	Class<? extends Reducer> reducer = null;
