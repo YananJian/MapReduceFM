@@ -101,7 +101,6 @@ public class Context {
             String path = dir + task_id + '@' + String.valueOf(partitionId);
             String str = key + "\t" + value + "\n";
             partitionFiles.get(partitionId).write(str);
-            System.out.println("Writing to disk, path: " + path + "\tcontent: " + str);
             /* get the next record from buffer */
             String line = bufferFiles.get(Integer.parseInt(bufferId)).readLine();
             if (line != null) {
