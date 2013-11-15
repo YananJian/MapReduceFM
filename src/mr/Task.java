@@ -99,7 +99,7 @@ public class Task implements Callable {
                 /* read from block */
                 DataNode dNode = namenode.getDataNode(Integer.parseInt(read_from_machine));
                 String content = dNode.getBlock(Integer.valueOf(block_id));
-                String[] lines = content.split("\n");
+                String[] lines = content.split("\\n");
                 for (int i= 0; i< lines.length; i++)
                 {
                     String line = lines[i];
