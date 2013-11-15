@@ -30,5 +30,5 @@ public class Record implements Comparable<Record> {
 
   @Override
   public int compareTo(Record other)
-    { return key.getVal().hashCode() - other.key.getVal().hashCode(); }
+    { return new Integer(key.getVal().hashCode()).compareTo(new Integer(other.key.getVal().hashCode())); }
 }

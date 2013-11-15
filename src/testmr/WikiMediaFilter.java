@@ -30,9 +30,11 @@ public class WikiMediaFilter
       boolean isImage = tokens[1].matches(PATTERN_IMAGE);
       boolean isBoilerplate = tokens[1].matches(PATTERN_BOILERPLATE);
       if (isEnglish && !isSpecial && !isLowercase && !isImage && !isBoilerplate) {
+        TextWritable k = new TextWritable(); 
         TextWritable v = new TextWritable();
+        k.setVal(tokens[1]);
         v.setVal(tokens[2]);
-        context.write(key, v);
+        context.write(k, v);
       }
     }
   }
@@ -62,8 +64,8 @@ public class WikiMediaFilter
     Job job = new Job(args[2], Integer.parseInt(args[3]));
     job.set_fileInputPath(input_path);
     job.set_fileOutputPath(output_path);
-    job.set_mapper(FilterMapper.class, "testmr/FilterMapper.class");
-    job.set_reducer(FilterReducer.class, "testmr/FilterReducer.class");
+    job.set_mapper(FilterMapper.class, "testmr/WikiMediaFilter$FilterMapper.class");
+    job.set_reducer(FilterReducer.class, "testmr/WikiMediaFilter$FilterReducer.class");
     try {
       job.submit();
     } catch (RemoteException e) {

@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -114,17 +115,44 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		HashMap<String, List<String>> partition_res = new HashMap<String, List<String>>();
 		HashMap<String, HashMap<String, Integer>> mc_hash_size = job_mc_hash_size.get(jobID);
 		Iterator iter = mc_hash_size.entrySet().iterator(); 
-		while (iter.hasNext()) { 
-		    Map.Entry entry = (Map.Entry) iter.next(); 
-		    String machineID = (String) entry.getKey();
-		    HashMap<String, Integer> hash_size = (HashMap<String, Integer>)entry.getValue();
-		    List<String> lst = new ArrayList<String>();
-		    lst.add(machineID);
-		    partition_res.put(machineID, lst);
-		} 
-		
+        /* allocate #reducer_ct reducers */
+        for (int i = 0; i < reducer_ct; i++) {
+            TreeMap priorityQ = new TreeMap<Integer, String>();
+            /* insert each record into a priority queue */
+            for (Map.Entry<String, HashMap<String, Integer>> entry : mc_hash_size.entrySet())
+                priorityQ.put(entry.getValue().get(String.valueOf(i)), entry.getKey());
+            /* iteratively get the machine with most records, and check #cpu available */
+            Map.Entry<Integer, String> entry = null;
+            String machineId = "";
+            boolean allocated = false;
+            while ((entry = priorityQ.pollLastEntry()) != null) {
+                machineId = entry.getValue();
+                int availCPUs = cpu_resource.get(machineId);
+                if (availCPUs > 0) {
+                    availCPUs--;
+                    cpu_resource.put(machineId, availCPUs);
+                    allocated = true;
+                    break;
+                }
+            }
+            if (!allocated) {
+                /* no idle machine found */
+                String id = pick_idle_machine();
+                if (!id.equals("")) {
+                    machineId = id;
+                    int availCPUs = cpu_resource.get(machineId);
+                    availCPUs--;
+                    cpu_resource.put(machineId, availCPUs);
+                }
+            }
+            List<String> lst = partition_res.get(machineId);
+            if (lst == null)
+                lst = new ArrayList<String>();
+            lst.add(String.valueOf(i));
+            partition_res.put(machineId, lst);
+        }
+
 		return partition_res;
-		
 	}
 
 	/**
@@ -214,7 +242,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 			   List<Integer> value = (List<Integer>)entry.getValue();
 			   System.out.println("BlockID:"+blockID.toString());
 			   /* set mapper task */
-			  
+
 			   String mapper_id = job.get_jobId() + "_m_" + String.valueOf(blockID);
 			   
 			   boolean allocated = false;
@@ -333,8 +361,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 						for (int j = 0; j < names.size(); j++)
 						{
 							String content = r_taskTracker.readstr(r_path+'/', names.get(j));
-							w_taskTracker.writestr(w_path+'/'+names.get(j)+'_', content);
-							System.out.println("Wrote to path:"+w_path+'/'+names.get(j)+'_');							
+							w_taskTracker.writestr(w_path+'/'+names.get(j), content);
+							System.out.println("Wrote to path:"+w_path+'/'+names.get(j));							
 						}
 					}
 	
@@ -352,32 +380,32 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	public void start_reducer(String job_id, String write_path, HashMap<String, List<String>> mcID_hashIDs)
 	{
 		Iterator iter = mcID_hashIDs.entrySet().iterator();
-		int ct = 0;
 		while(iter.hasNext())
 		{
 			Map.Entry entry = (Map.Entry) iter.next();
 			String mcID = (String)entry.getKey();
 			List<String> hashIDs = (List<String>)entry.getValue();
-						
-				TaskTracker tt = this.alive_tasktrackers.get(mcID);
-				String reducer_id = job_id + "_r_" + String.valueOf(ct);
-				Job job = this.jobID_Job.get(job_id);
-				Class<? extends Reducer> reducer = job.get_reducer_cls();
-				String cls_path = job.get_reducer_clspath();
-				try {
-					tt.start_reducer(job_id, reducer_id, write_path, reducer, cls_path);
-					Hashtable<String, String> rcmc = new Hashtable<String, String>();
-					rcmc.put(reducer_id, mcID);
-					reducer_machine.put(job_id, rcmc);
-					System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
-					ct += 1;
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+
+			TaskTracker tt = this.alive_tasktrackers.get(mcID);
+            for (String id : hashIDs) {
+			    String reducer_id = job_id + "_r_" + id;
+			    Job job = this.jobID_Job.get(job_id);
+			    Class<? extends Reducer> reducer = job.get_reducer_cls();
+			    String cls_path = job.get_reducer_clspath();
+			    try {
+				    tt.start_reducer(job_id, reducer_id, write_path, reducer, cls_path);
+				    Hashtable<String, String> rcmc = new Hashtable<String, String>();
+				    rcmc.put(reducer_id, mcID);
+				    reducer_machine.put(job_id, rcmc);
+			        job.set_reducerStatus(id, TASK_STATUS.RUNNING);
+				    System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
+			    } catch (RemoteException e) {
+				    e.printStackTrace();
+			    }
+            }
 		}
 	}
-	
+
 	public boolean is_task_finished(String jobID, TASK_TP tp)
 	{
 		Job job = jobID_Job.get(jobID);
@@ -387,7 +415,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		else if (tp == TASK_TP.REDUCER)
 			task_status = job.get_reducerStatus();
 		Iterator iter = task_status.entrySet().iterator();
-		int ct = 0;
+        boolean finished = true;
 		while(iter.hasNext())
 		{
 			Entry pairs = (Entry) iter.next();
@@ -396,12 +424,12 @@ public class JobTrackerImpl implements JobTracker, Callable{
 			if (status == TASK_STATUS.RUNNING)
 			{
 				System.out.println("Task "+mapperID+" is running");
-				return false;
+                finished = false;
 			}
 			else if (status == TASK_STATUS.FINISHED)
 				System.out.println("Task "+mapperID+" is finished");
 		}
-		return true;
+		return finished;
 	}
 	
 	private void restart_jobs(String machineID)
@@ -515,7 +543,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
         sb.append("Job ID: " + jobID + "\n");
         sb.append("Input File: " + job.get_fileName() + "\n");
         sb.append("Output Path: " + job.get_fileOutputPath() + "\n");
-        sb.append("Mapper: " + job.get_mapper_cls().getName() + "\t");
+        sb.append("Mapper: " + job.get_mapper_cls().getName() + "\n");
         sb.append("#Mapper Instance: " + nMapper + "\n");
         sb.append("Reducer: " + job.get_reducer_cls().getName() + "\n");
         sb.append("#Reducer Instance: " + nReducer + "\n");
@@ -533,7 +561,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
         float reducerProgress = 0;
         if (nReducer != 0)
          reducerProgress =  nFinishedReducer/nReducer*100;
-        sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "\n");
+        sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "%\n");
         return sb.toString();
     }
 
