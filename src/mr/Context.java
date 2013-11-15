@@ -119,7 +119,7 @@ public class Context {
                 Collections.sort(records);
             }
             /* resolve idSize */
-            Integer nLines = idSize.get(partitionId);
+            Integer nLines = idSize.get(String.valueOf(partitionId));
             if (nLines == null)
                 idSize.put(String.valueOf(partitionId), 1);
             else

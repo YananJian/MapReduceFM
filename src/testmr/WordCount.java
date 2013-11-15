@@ -18,14 +18,20 @@ public class WordCount
 
     @Override
     public void map(TextWritable key, TextWritable val, Context context) {
-      TextWritable v = new TextWritable();
-      v.setVal("1");
+      String line = (String) value.getVal();
+      String[] words = line.split(" ");
+      for (String word : words) {
+        TextWritable k = new TextWritable();
+        TextWritable v = new TextWritable();
+        k.setVal(word);
+        v.setVal("1");
+        context.write(k, v);
+      }
       try {
         Thread.sleep(5000);
       } catch (Exception e) {
         // igore
       }
-      context.write(key, v);
     }
   }
 

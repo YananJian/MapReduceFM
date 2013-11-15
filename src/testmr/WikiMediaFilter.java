@@ -49,9 +49,9 @@ public class WikiMediaFilter
       while (itor.hasNext()) {
         views += Integer.parseInt(((TextWritable) itor.next()).getVal());
       }
-      if (views > 100000) {
+      if (views > 100) {
         TextWritable value = new TextWritable();
-        value.setVal(views);
+        value.setVal(String.valueOf(views));
         context.write(key, value);
       }
     }
