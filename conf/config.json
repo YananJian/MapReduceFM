@@ -1,7 +1,7 @@
 {
-  "block size": "64",
+  "block size": "2",
   "replication": "2",
-  "reducer": "2",
+  "reducer": "5",
   "healthcheck interval": "5",
   "fsImage dir": "./fsImage",
   "dfs_registry": {
