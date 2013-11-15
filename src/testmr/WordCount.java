@@ -18,7 +18,7 @@ public class WordCount
 
     @Override
     public void map(TextWritable key, TextWritable val, Context context) {
-      String line = (String) value.getVal();
+      String line = (String) val.getVal();
       String[] words = line.split(" ");
       for (String word : words) {
         TextWritable k = new TextWritable();

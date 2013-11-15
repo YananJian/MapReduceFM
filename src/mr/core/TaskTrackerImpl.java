@@ -143,13 +143,11 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 		for (int i=0; i< files.length; i++)
 		{
 			String name = files[i].getName();
-			System.out.println("In TaskTracker, name:"+name+"\thashID:"+hashID+"\tmachineID:"+id);
-			System.out.println("Name:"+name+", machineID:"+id);
+			
 			String tmp[] = name.split("@");
 			if (tmp.length > 0)
 				if (tmp[tmp.length-1].equals(hashID))
 				{
-					System.out.println("Filtered Name:"+name+", machineID:"+id);
 					ret_names.add(name);		
 				}
 		}
@@ -350,12 +348,16 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
 			{
 				LinkedList<Record> contents;
 				try {
-					if (f1.get() == TASK_STATUS.TERMINATED)
+					
+					if (f1.get() != null)
 					{
-						msg.setTask_stat(TASK_STATUS.TERMINATED);
-						msg.set_future(null);
-						jobTracker.heartbeat(msg);
-					}	
+						if ( f1.get() == TASK_STATUS.TERMINATED)
+						
+						{
+							msg.setTask_stat(TASK_STATUS.TERMINATED);
+							msg.set_future(null);
+							jobTracker.heartbeat(msg);
+						}	
 
                     String path = output_path + '/' + reducer_id;
                     try {
@@ -367,10 +369,11 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
                     } catch (IOException e) {
                         // ignore
                     }
-                    System.out.println("Reducer finished");
+                    
 				    msg.setTask_stat(TASK_STATUS.FINISHED);
 				    msg.set_future(null);
 				    jobTracker.heartbeat(msg);
+					}
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

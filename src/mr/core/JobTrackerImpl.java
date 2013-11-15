@@ -39,9 +39,10 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	int reducer_ct = 0;
 	boolean terminated = false;
 	Hashtable<String, JobStatus> job_status = new Hashtable<String, JobStatus>();
-	/*
+	/**
 	 * mapper_machine: pair of job, mapperID and machineID
 	 * running_jobs: pair of machineID, list of running jobIDs
+	 * 
 	 * */
 	Hashtable<String, Hashtable<String, String>> mapper_machine = new Hashtable<String, Hashtable<String, String>>();
 	Hashtable<String, Hashtable<String, String>> reducer_machine = new Hashtable<String, Hashtable<String, String>> ();
@@ -57,6 +58,15 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	Registry dfs_registry = null;
 	ExecutorService exec = null;
 	
+  /**
+   * Init JobTracker, create mrRegistry
+   * @param registryHost mapreducefm's Registry host address
+   * @param mrPort mapreducefm's registry port number
+   * @param dfsPort dfs's port number
+   * @param selfPort mapreducefm's port number
+   * @param reducer_ct reducer numbers customized by client
+   * @throws RemoteException
+   */
 	public void init(String registryHost, String mrPort, String dfsPort, String selfPort, String reducer_ct)
 	{
 		try {
@@ -79,16 +89,16 @@ public class JobTrackerImpl implements JobTracker, Callable{
 	      }
 	}
 	
-	/*
+	/**
 	 * preset_reducer:
 	 * Sum the sizes of partitions given back by mapper tasks,
 	 * Choose the Top N (N = num of reducers) sizes, for each partition,
 	 * allocate reducers on the machine that has most resources.
-	 * 
+	 *
 	 * Eg. We have 2 reducers.
-	 * Machine A has partition k1 -> 1KB, k2 -> 1MB
-	 * Machine B has partition k1 -> 1MB, k2 -> 1GB
-	 * Machine C has partition k1 -> 1GB, k2 -> 1TB
+	 * Machine A has partition k1 = 1KB, k2 = 1MB
+	 * Machine B has partition k1 = 1MB, k2 = 1GB
+	 * Machine C has partition k1 = 1GB, k2 = 1TB
 	 * sum(k1) = 1GB + 1MB + 1KB
 	 * sum(k2) = 1TB + 1GB + 1MB
 	 * 
@@ -107,10 +117,17 @@ public class JobTrackerImpl implements JobTracker, Callable{
 		Iterator iter = mc_hash_size.entrySet().iterator(); 
         /* allocate #reducer_ct reducers */
         for (int i = 0; i < reducer_ct; i++) {
-            TreeMap priorityQ = new TreeMap<Integer, String>();
+            TreeMap<Integer, String> priorityQ = new TreeMap<Integer, String>();
             /* insert each record into a priority queue */
             for (Map.Entry<String, HashMap<String, Integer>> entry : mc_hash_size.entrySet())
-                priorityQ.put(entry.getValue().get(String.valueOf(i)), entry.getKey());
+            {
+            	System.out.println("Entry:"+entry.toString());
+            	Integer size = entry.getValue().get(String.valueOf(i));
+            	if (size == null)
+            		size = 0;
+                priorityQ.put(size, entry.getKey());
+                System.out.println("PriorityQ:"+priorityQ.toString());
+            }
             /* iteratively get the machine with most records, and check #cpu available */
             Map.Entry<Integer, String> entry = null;
             String machineId = "";
@@ -141,37 +158,25 @@ public class JobTrackerImpl implements JobTracker, Callable{
             lst.add(String.valueOf(i));
             partition_res.put(machineId, lst);
         }
-        /*
-		while (iter.hasNext()) { 
-		    Map.Entry entry = (Map.Entry) iter.next(); 
-		    String machineID = (String) entry.getKey();
-		    HashMap<String, Integer> hash_size = (HashMap<String, Integer>)entry.getValue();
-		    List<String> lst = new ArrayList<String>();
-		    lst.add(machineID);
-		    partition_res.put(machineID, lst);
-		} 
-        */
-		// Since I have to think more about how to optimize it, let's assume hashID = machineID
+        System.out.println("Partition_res:"+partition_res.toString());
 		return partition_res;
 	}
 
-	
-	public void update_job_status(String job_id, String task_id, TASK_TP tp, JOB_STATUS status)
-	{
-		JobStatus jstatus = this.job_status.get(job_id);
-		if (tp == TASK_TP.MAPPER)
-			jstatus.set_mapper_status(task_id, status);
-		else if (tp == TASK_TP.REDUCER)
-			jstatus.set_reducer_status(task_id, status);
-		this.job_status.put(job_id, jstatus);
-	}
-	
+	/**
+	 * Allocate mapper tasks to alive tasktrackers
+	 * @param machineID the ID of machine which alive tasktracker is running on
+	 * @param mapper_id ID of mapper
+	 * @param blockID ID of block
+	 * @param read_from_machine the machineID of which block is stored and to be read by tasktracker. 
+	 * @param job job which has to be scheduled
+	 * @param mc_mp hashmap of machineID and mapper_id
+	 */
 	public void allocate_mapper(String machineID, String mapper_id, String blockID, String read_from_machine, Job job, Hashtable<String, String> mc_mp)
 	{
 		TaskTracker tt;
 		try {
 			tt = this.alive_tasktrackers.get(machineID);
-			 /* 
+			    /** 
 			    * TaskTracker has to hash key to an ID based on REDUCER_NUM 
 			    * Thus to ensure same key on different mappers will have the same ID
 			    * So finally same key will go to the same reducer.
@@ -363,8 +368,8 @@ public class JobTrackerImpl implements JobTracker, Callable{
 						for (int j = 0; j < names.size(); j++)
 						{
 							String content = r_taskTracker.readstr(r_path+'/', names.get(j));
-							w_taskTracker.writestr(w_path+'/'+names.get(j)+'_', content);
-							System.out.println("Wrote to path:"+w_path+'/'+names.get(j)+'_');							
+							w_taskTracker.writestr(w_path+'/'+names.get(j), content);
+							System.out.println("Wrote to path:"+w_path+'/'+names.get(j));							
 						}
 					}
 	
@@ -399,7 +404,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				    Hashtable<String, String> rcmc = new Hashtable<String, String>();
 				    rcmc.put(reducer_id, mcID);
 				    reducer_machine.put(job_id, rcmc);
-			        job.set_reducerStatus(id, TASK_STATUS.RUNNING);
+			        job.set_reducerStatus(reducer_id, TASK_STATUS.RUNNING);
 				    System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
 			    } catch (RemoteException e) {
 				    e.printStackTrace();
@@ -410,6 +415,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 
 	public boolean is_task_finished(String jobID, TASK_TP tp)
 	{
+		System.out.println("Checking ------------------------");
 		Job job = jobID_Job.get(jobID);
 		HashMap<String,TASK_STATUS> task_status = null;
 		if (tp == TASK_TP.MAPPER)
@@ -488,6 +494,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 				}
 				if (is_task_finished(jobID, TASK_TP.MAPPER))
 				{
+					System.out.println("Mapper Job finished");
 					HashMap<String, List<String>> mcID_hashIDs = preset_reducer(jobID);
 					System.out.println("Before Shuffle, mcID_hashIDs:"+mcID_hashIDs.toString());
 					shuffle(jobID, mcID_hashIDs);
@@ -503,7 +510,7 @@ public class JobTrackerImpl implements JobTracker, Callable{
 			{
 				String jobID = msg.getJob_id();
 				String taskID = msg.getTask_id();
-				System.out.println("Reducer Finished!");
+				
 				String machineID = msg.getMachine_id();
 				Job job = jobID_Job.get(jobID);
 				int aval_cpus = this.cpu_resource.get(machineID);

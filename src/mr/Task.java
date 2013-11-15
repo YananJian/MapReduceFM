@@ -144,10 +144,11 @@ public class Task implements Callable {
 				Context context = new Context(job_id, task_id, reducer_ct, output_dir, TASK_TP.REDUCER);
 				System.out.println("Executing task, job id:" + job_id
 					+ ", reducer_id:" + task_id);
+				String partition_id = task_id.split("_r_")[1].trim();
 				String input_dir = "/tmp/"+job_id+'/'+machine_id+'/';
 				//System.out.println("Input to reducer, dir:"+input_dir);
 				reducer_cls.init(input_dir);
-				reducer_cls.bootstrap();
+				reducer_cls.bootstrap(partition_id);
 				System.out.println("After bootstrap");
 				Record record = null;
 				while ((record = reducer_cls.getNext()) != null) {
