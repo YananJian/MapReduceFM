@@ -19,18 +19,15 @@ public class WordCount
     @Override
     public void map(TextWritable key, TextWritable val, Context context) {
       String line = (String) val.getVal();
-      String[] words = line.split(" ");
+      String[] words = line.split("\\s+");
       for (String word : words) {
+        if (word.equals(""))
+          continue;
         TextWritable k = new TextWritable();
         TextWritable v = new TextWritable();
         k.setVal(word);
         v.setVal("1");
         context.write(k, v);
-      }
-      try {
-        Thread.sleep(5000);
-      } catch (Exception e) {
-        // igore
       }
     }
   }
@@ -44,11 +41,6 @@ public class WordCount
       IntWritable value = new IntWritable();
       for (Writable v : values) {
         TextWritable tw = (TextWritable) v;
-        try {
-          Thread.sleep(5000);
-        } catch (Exception e) {
-          // ignore
-        }
         sum += Integer.parseInt(tw.getVal());
       }
       value.setVal(sum);

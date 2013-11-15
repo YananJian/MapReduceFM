@@ -6,7 +6,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Map.Entry;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.PriorityQueue;
 
 import mr.common.Constants.TASK_TP;
@@ -19,7 +21,7 @@ public class Context {
     private HashMap<String, Integer> idSize = new HashMap<String, Integer>();
     private int reducer_ct = 0;
     private String dir = "";
-    private PriorityQueue<Record> contents = new PriorityQueue<Record>();
+    private TreeMap<Record, String> contents = new TreeMap<Record, String>();
     private int numBuffers = 0;
     private String bufferPathPrefix = "";
     private TASK_TP task_tp = null;
@@ -130,7 +132,7 @@ public class Context {
     {
         Record record = new Record(key, String.valueOf(numBuffers));
         record.addValue(value);
-        contents.offer(record);
+        contents.put(record, String.valueOf(numBuffers));
         if (contents.size() >= kBufferSize)
             /* buffer is full, dump to tmp file */
             writeBuffer();
@@ -147,7 +149,8 @@ public class Context {
             if (task_tp == TASK_TP.MAPPER)
                 numBuffers++;
             BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
-            for (Record r : contents) {
+            for (Entry<Record, String> entry : contents.entrySet()) {
+                Record r = (Record) entry.getKey();
                 bw.write(r.getKey().getVal() + "\t" + r.getValues().iterator().next().getVal());
                 if (task_tp == TASK_TP.MAPPER)
                     bw.write("\t" + r.getFileName());

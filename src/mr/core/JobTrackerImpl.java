@@ -76,8 +76,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
             dfs_registry = LocateRegistry.getRegistry(this.registryHost, this.dfsPort);
             JobTracker stub = (JobTracker) UnicastRemoteObject.exportObject(this, Integer.valueOf(selfPort));
             mr_registry.rebind("JobTracker", stub);
-            this.namenode = (NameNode) dfs_registry.lookup("NameNode");        
-            System.out.println("Registered");
+            this.namenode = (NameNode) dfs_registry.lookup("NameNode");
             exec = Executors.newCachedThreadPool();
             exec.submit(this);
           } catch (Exception e) {

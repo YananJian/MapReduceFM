@@ -78,6 +78,7 @@ public class NameNodeImpl implements NameNode
     else
       dataNodeInfos.put(id, new DataNodeInfo(id, datanode));
     dataNodeInfos.get(id).setAlive(true);
+    System.out.println("DataNode " + id + " registered");
   }
 
   /**
@@ -355,13 +356,13 @@ public class NameNodeImpl implements NameNode
       for (Map.Entry<Integer, DataNodeInfo> entry : dataNodeInfos.entrySet())
         if (entry.getValue().isAlive())
           currDataNodes++;
-      System.out.println("#Registered DataNodes: " + currDataNodes + "/" + nDataNodes);
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
     }
+    System.out.println("Bootstrap finishes");
   }
 
   /**
@@ -384,6 +385,7 @@ public class NameNodeImpl implements NameNode
         try {
           dni.getDataNode().heartBeat();
         } catch (RemoteException e) {
+          System.out.println("Lose connection with DataNode " + dni.getId());
           /* unreachable node */
           dni.setAlive(false);
           /* move each replica to other node */
