@@ -6,9 +6,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.PriorityQueue;
 
 import mr.common.Constants.TASK_TP;
 import mr.io.Writable;
@@ -20,7 +19,7 @@ public class Context {
     private HashMap<String, Integer> idSize = new HashMap<String, Integer>();
     private int reducer_ct = 0;
     private String dir = "";
-    private LinkedList<Record> contents = new LinkedList<Record>();
+    private PriorityQueue<Record> contents = new PriorityQueue<Record>();
     private int numBuffers = 0;
     private String bufferPathPrefix = "";
     private TASK_TP task_tp = null;
@@ -76,7 +75,7 @@ public class Context {
         for (int i = 0; i < reducer_ct; i++)
             partitionFiles.put(i, new BufferedWriter(new FileWriter(dir + task_id + '@' + i)));
         /* insert one record/file into records */
-        LinkedList<Record> records = new LinkedList<Record>();
+        PriorityQueue<Record> records = new PriorityQueue<Record>();
         for (int i = 0; i < numBuffers; i++) {
             String line = bufferFiles.get(i).readLine();
             if (line != null) {
@@ -87,11 +86,9 @@ public class Context {
                 value.setVal(tokens[1]);
                 Record record = new Record(key, tokens[2]);
                 record.addValue(value);
-                records.add(record);
+                records.offer(record);
             }
         }
-        /* sort the list */
-        Collections.sort(records);
         /* begin n-way merge sort */
         while (!records.isEmpty()) {
             Record record = records.poll();
@@ -113,8 +110,7 @@ public class Context {
                 v.setVal(tokens[1]);
                 Record r = new Record(k, tokens[2]);
                 r.addValue(v);
-                records.add(r);
-                Collections.sort(records);
+                records.offer(r);
             }
             /* resolve idSize */
             Integer nLines = idSize.get(String.valueOf(partitionId));
@@ -134,7 +130,7 @@ public class Context {
     {
         Record record = new Record(key, String.valueOf(numBuffers));
         record.addValue(value);
-        contents.add(record);
+        contents.offer(record);
         if (contents.size() >= kBufferSize)
             /* buffer is full, dump to tmp file */
             writeBuffer();
@@ -143,7 +139,6 @@ public class Context {
     private void writeBuffer()
     {
         /* sort records */
-        Collections.sort(contents);
         File pathFile = new File(bufferPathPrefix);
         if (!pathFile.exists())
             pathFile.mkdirs();

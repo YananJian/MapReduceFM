@@ -5,9 +5,8 @@ import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.Serializable;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.HashMap;
-import java.util.Collections;
 
 import mr.io.Writable;
 import mr.io.TextWritable;
@@ -17,13 +16,13 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
 
     private String dirname;
     private HashMap<String, Integer> skipCounts;
-    private LinkedList<Record> records;
+    private PriorityQueue<Record> records;
 
     public void init(String dirname)
     {
         this.dirname = dirname;
         skipCounts = new HashMap<String, Integer>();
-        records = new LinkedList<Record>();
+        records = new PriorityQueue<Record>();
     }
 
     public void reduce(TextWritable key, Iterable<Writable> values, Context context) {
@@ -56,7 +55,7 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                     value.setVal(tokens[1]);
                     Record record = new Record(key, filename);
                     record.addValue(value);
-                    records.add(record);
+                    records.offer(record);
                 }
                 br.close();
             } catch (IOException e) {
@@ -64,16 +63,16 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                 System.exit(1);
             }
         }
-        Collections.sort(records);
     }
 
     public Record getNext() throws IOException
     {
         if (records.isEmpty())
           return null;
-        Writable key = records.getFirst().getKey();
+        Writable key = records.peek().getKey();
+        //Writable key = records.getFirst().getKey();
         Record result = new Record(key, null);
-        while (!records.isEmpty() && records.getFirst().getKey().getVal().hashCode() == key.getVal().hashCode()) {
+        while (!records.isEmpty() && records.peek().getKey().getVal().hashCode() == key.getVal().hashCode()) {
             Record record = records.poll();
             result.addValue((Writable) record.getValues().iterator().next());
             String filename = record.getFileName();
@@ -98,8 +97,7 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                 /* reinsert entry */
                 Record tmp = new Record(k, filename);
                 tmp.addValue(v);
-                records.add(tmp);
-                Collections.sort(records);
+                records.offer(tmp);
             }
             br.close();
         }
