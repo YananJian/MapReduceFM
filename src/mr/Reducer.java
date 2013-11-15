@@ -18,18 +18,16 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
     private String dirname;
     private HashMap<String, Integer> skipCounts;
     private LinkedList<Record> records;
-    
+
     public void init(String dirname)
     {
         this.dirname = dirname;
         skipCounts = new HashMap<String, Integer>();
         records = new LinkedList<Record>();
     }
-    
-    public void reduce(TextWritable key, Iterable<Writable> values,
-			Context context) {
-		
-	}
+
+    public void reduce(TextWritable key, Iterable<Writable> values, Context context) {
+    }
 
     public void bootstrap(String hashID) {
         /* insert one record/file into records */
@@ -37,14 +35,12 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         File[] files = dir.listFiles();
         for (File file : files) {
             String filename = file.getName();
-           
             String tmp[] = filename.split("@");
             if (tmp.length > 1)
-            	if(!tmp[1].equals(hashID))
-            		{
-            			continue;
-            		}
-            
+                if(!tmp[1].equals(hashID))
+                {
+                    continue;
+                }
             skipCounts.put(filename, 1);
             try {
                 BufferedReader br = new BufferedReader(new FileReader(file));
@@ -91,13 +87,12 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
                 br.readLine();
             String line = br.readLine();
             if (line != null)
-            	if (!line.trim().equals(""))
+                if (!line.trim().equals(""))
             {
                 String[] tokens = line.split("\t");
                 /* HARD CODE TYPE TO BE TEXTWRITABLE */
                 TextWritable k = new TextWritable();
                 TextWritable v = new TextWritable();
-                
                 k.setVal(tokens[0]);
                 v.setVal(tokens[1]);
                 /* reinsert entry */
@@ -110,8 +105,4 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
         }
         return result;
     }
-
-	
-
-	
 }

@@ -15,54 +15,52 @@ import mr.io.Writable;
 import mr.io.TextWritable;
 
 public class Context {
-
-	private String job_id = null;
-	private String task_id = null; //mapper id or reducer id
-	private HashMap<String, Integer> idSize = new HashMap<String, Integer>();
-	private int reducer_ct = 0;
-	private String dir = "";
-	private LinkedList<Record> contents = new LinkedList<Record>();
+    private String job_id = null;
+    private String task_id = null; //mapper id or reducer id
+    private HashMap<String, Integer> idSize = new HashMap<String, Integer>();
+    private int reducer_ct = 0;
+    private String dir = "";
+    private LinkedList<Record> contents = new LinkedList<Record>();
     private int numBuffers = 0;
     private String bufferPathPrefix = "";
-	private TASK_TP task_tp = null;
+    private TASK_TP task_tp = null;
     private final int kBufferSize = 1000;
-    
-    
-	public Context(String job_id, String task_id, int reducer_ct, String dir, TASK_TP tp)
-	{
-		this.job_id = job_id;
-		this.task_id = task_id;
-		this.reducer_ct = reducer_ct;
-		this.dir = dir;
+
+    public Context(String job_id, String task_id, int reducer_ct, String dir, TASK_TP tp)
+    {
+        this.job_id = job_id;
+        this.task_id = task_id;
+        this.reducer_ct = reducer_ct;
+        this.dir = dir;
         this.bufferPathPrefix = "/tmp/" + task_id + "tmp/";
         this.task_tp = tp;
-	}
-	
-	public HashMap<String, Integer> get_idSize()
-	{
-		return this.idSize;
-	}
-	
-	public String get_JobID()
-	{
-		return this.job_id;
-	}
-	
-	public String get_TaskID()
-	{
-		return this.task_id;
-	}
-	
-	public String getContents() throws IOException
-	{
+    }
+
+    public HashMap<String, Integer> get_idSize()
+    {
+        return this.idSize;
+    }
+
+    public String get_JobID()
+    {
+        return this.job_id;
+    }
+
+    public String get_TaskID()
+    {
+        return this.task_id;
+    }
+
+    public String getContents() throws IOException
+    {
         /* flush remaining contents */
         if (!contents.isEmpty())
             writeBuffer();
         return bufferPathPrefix + "0";
-	}
-	
-	protected void partition() throws IOException
-	{
+    }
+
+    protected void partition() throws IOException
+    {
         File dirFile = new File(dir);
         if (!dirFile.exists())
             dirFile.mkdirs();
@@ -130,18 +128,17 @@ public class Context {
             bufferFiles.get(i).close();
         for (int i = 0; i < reducer_ct; i++)
             partitionFiles.get(i).close();
-	}
-	
-	public void write(Writable key, Writable value)
-	{
+    }
+
+    public void write(Writable key, Writable value)
+    {
         Record record = new Record(key, String.valueOf(numBuffers));
         record.addValue(value);
-		contents.add(record);		
-
+        contents.add(record);
         if (contents.size() >= kBufferSize)
             /* buffer is full, dump to tmp file */
             writeBuffer();
-	}
+    }
 
     private void writeBuffer()
     {
