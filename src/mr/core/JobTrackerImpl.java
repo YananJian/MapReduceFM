@@ -574,7 +574,6 @@ public class JobTrackerImpl implements JobTracker, Callable{
     	      throw new RemoteException("JobTracker terminating");
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Job> entry : jobID_Job.entrySet()) {
-            System.out.println(sb.toString());
             sb.append("--------------------------------------------------\n");
             sb.append(desc_job(entry.getKey()));
         }
