@@ -30,7 +30,14 @@ public class Task implements Callable {
     NameNode namenode = null;
     String read_from_machine = null;
     Registry dfs_registry = null;
-
+    
+    /**
+     * Constructor
+     * @param job_id
+     * @param task_id
+     * @param host host of DFS Registry
+     * @param port port of DFS Registry
+     */
     public Task(String job_id, String task_id, String host, int port) {
         this.job_id = job_id;
         this.task_id = task_id;
@@ -44,46 +51,94 @@ public class Task implements Callable {
         }
     }
 
+    /**
+     * set machineID to read from
+     * @param machineID
+     */
     public void set_read_from_machine(String machineID)
     {
         this.read_from_machine = machineID;
     }
 
+    /**
+     * set blockID
+     * @param bID
+     */
     public void set_blockID(String bID)
     {
         this.block_id = bID;
     }
+    
+    /**
+     * set output DIR
+     * @param dir
+     */
     public void set_outputdir(String dir)
     {
         this.output_dir = dir;
     }
 
+    /**
+     * set task type, task type includes MAPPER, REDUCER
+     * @param tp
+     */
     public void set_taskTP(TASK_TP tp)
     {
         this.type = tp;
     }
 
+    /**
+     * set reducer number
+     * @param rCT
+     */
     public void set_reducerCT(int rCT)
     {
         this.reducer_ct = rCT;
     }
 
+    /**
+     * set mapper class
+     * @param mapper
+     */
     public void set_mapper_cls(Class<? extends Mapper> mapper) {
         this.mapper = mapper;
     }
 
+    /**
+     * set reducer class
+     * @param reducer
+     */
     public void set_reducer_cls(Class<? extends Reducer> reducer){
         this.reducer = reducer;
     }
+    
+    /**
+     * set dir to read from
+     * @param dir
+     */
     public void set_read_dir(String dir) {
         this.read_dir = dir;
     }
 
+    /**
+     * set machineID
+     * @param m_id
+     */
     public void set_machineID(String m_id)
     {
         this.machine_id = m_id;
     }
 
+    /**
+     * overrided thread function, when the task starts, 
+     * perform different actions based on task type.
+     * If it is mapper task, after reading blocks, 
+     * call the overrided map function,
+     * partition and sort
+     * If it is reducer task, after init and bootstrap reducer,
+     * call the overrided reduce function,
+     * 
+     */
     @Override
     public Object call() throws RemoteException {
         try {
