@@ -13,6 +13,8 @@ def dfs(argv):
     put_clsfile(argv)
   elif argv[1] == "get_class":
     get_clsfile(argv)
+  elif argv[1] == 'terminate':
+    terminate()
 
 def describe_dfs():
   with open("../conf/config.json", "r") as infile:
@@ -72,6 +74,17 @@ def get_clsfile(argv):
   cmd.append(argv[3])
   cmd.append(config['dfs_registry']['host'])
   cmd.append(config['dfs_registry']['port'])
+  subprocess.call(cmd)
+
+def terminate():
+  with open("../conf/config.json", "r") as infile:
+    config = json.load(infile)
+  cmd = list()
+  cmd.append("java")
+  cmd.append("dfs.DFSTerminator")
+  cmd.append(config['dfs_registry']['host'])
+  cmd.append(config['dfs_registry']['port'])
+  cmd.append(config['fsImage dir'])
   subprocess.call(cmd)
 
 if __name__ == "__main__":

@@ -346,6 +346,8 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
     public Object call() throws RemoteException, InterruptedException {
         while(true)
         {
+        	if (this.terminated)
+        		return null;
             Msg msg = this.heartbeats.poll();
             if (msg != null)
             {
@@ -370,7 +372,10 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
     @Override
     public void terminate_self() throws RemoteException
     {
+    	System.out.println("TaskTracker "+this.id + " is terminating");
+    	this.terminated = true;
         UnicastRemoteObject.unexportObject(this, true);
+        System.out.println("TaskTracker "+this.id + " terminated");
     }
 
     public static void main(String[] args) {

@@ -376,6 +376,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
                     Hashtable<String, String> rcmc = new Hashtable<String, String>();
                     rcmc.put(reducer_id, mcID);
                     reducer_machine.put(job_id, rcmc);
+                    job.inc_reducerct();
                     job.set_reducerStatus(reducer_id, TASK_STATUS.RUNNING);
                     System.out.println("Starting Reducer in JobTracker, job_id:"+job_id+", reducer id:"+reducer_id);
                 } catch (RemoteException e) {
@@ -504,18 +505,19 @@ public class JobTrackerImpl implements JobTracker, Callable {
         Job job = jobID_Job.get(jobID);
         int nMapper = job.get_mapperct();
         int nReducer = job.get_reducerct();
-        Map<String, TASK_STATUS> mapperStatus = job.get_mapperStatus();
-        Map<String, TASK_STATUS> reducerStatus = job.get_reducerStatus();
+        /*Map<String, TASK_STATUS> mapperStatus = job.get_mapperStatus();
+        Map<String, TASK_STATUS> reducerStatus = job.get_reducerStatus();*/
         /* construct status msg */
         StringBuilder sb = new StringBuilder();
         sb.append("Job ID: " + jobID + "\n");
         sb.append("Input File: " + job.get_fileName() + "\n");
         sb.append("Output Path: " + job.get_fileOutputPath() + "\n");
         sb.append("Mapper: " + job.get_mapper_cls().getName() + "\n");
-        sb.append("#Mapper Instance: " + nMapper + "\n");
+        sb.append("#Allocated Mapper Instance: " + nMapper + "\n");
         sb.append("Reducer: " + job.get_reducer_cls().getName() + "\n");
-        sb.append("#Reducer Instance: " + nReducer + "\n");
-        int nFinishedMapper = 0;
+        sb.append("#Allocated Reducer Instance: " + nReducer + "\n");
+        sb.append("Job status:" + job.get_jobStatus().toString());
+        /*int nFinishedMapper = 0;
         for (Map.Entry<String, TASK_STATUS> entry : mapperStatus.entrySet())
             if (entry.getValue() == TASK_STATUS.FINISHED)
                 nFinishedMapper++;
@@ -530,6 +532,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
         if (nReducer != 0)
          reducerProgress =  nFinishedReducer/nReducer*100;
         sb.append("Progress: Mapper " + (int)mapperProgress + "%\tReducer: " + (int)reducerProgress + "%\n");
+       */
         return sb.toString();
     }
 
@@ -649,6 +652,8 @@ public class JobTrackerImpl implements JobTracker, Callable {
     {
         while(true)
         {
+        	if (this.terminated)
+        		break;
             Set<Entry<String, TaskTracker>> set = alive_tasktrackers.entrySet();
             Iterator<Entry<String, TaskTracker>> iter = set.iterator();
             while(iter.hasNext())
@@ -692,7 +697,10 @@ public class JobTrackerImpl implements JobTracker, Callable {
             String jobID = (String) entry.getKey();
             Job job = (Job) entry.getValue();
             if (job.get_jobStatus() == JOB_STATUS.RUNNING)
+            {
+            	System.out.println("Job "+job.get_jobId() + " is running, terminating it");
                 terminate_job(jobID);
+            }
         }
     }
 
@@ -700,12 +708,14 @@ public class JobTrackerImpl implements JobTracker, Callable {
     public void terminate() throws RemoteException{
         terminated = true;
         terminate_allJobs();
+        System.out.println("Teminated all running jobs");
         Set<Entry<String, TaskTracker>> s = alive_tasktrackers.entrySet();
         Iterator<Entry<String, TaskTracker>> iter = s.iterator();
         while(iter.hasNext())
         {
             Entry<String, TaskTracker> entry = (Entry<String, TaskTracker>)iter.next();
             TaskTracker tt = (TaskTracker)entry.getValue();
+            System.out.println("Terminating TaskTracker ");
             tt.terminate_self();
         }
         try {
