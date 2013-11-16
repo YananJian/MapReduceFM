@@ -100,13 +100,12 @@ public class Context {
             if ((bufferId== null) || (bufferId.equals("")))
             	break;
             int partitionId = Math.abs(key.hashCode() % reducer_ct);
-            String path = dir + task_id + '@' + String.valueOf(partitionId);
             String str = key + "\t" + value + "\n";
             partitionFiles.get(partitionId).write(str);
             /* get the next record from buffer */
             BufferedReader br = bufferFiles.get(Integer.parseInt(bufferId));
             if (br == null)
-            	break;
+                break;
             String line = bufferFiles.get(Integer.parseInt(bufferId)).readLine();
             if (line != null) {
                 String[] tokens = line.split("\t");

@@ -1,25 +1,29 @@
 {
-  "block size": "64",
-  "replication": "2",
+  "block size": "512",
+  "replication": "3",
   "reducer": "2",
   "healthcheck interval": "5",
-  "fsImage dir": "./fsImage",
+  "fsImage dir": "/tmp/fsImage",
   "dfs_registry": {
-    "host": "0.0.0.0",
+    "host": "unix1.andrew.cmu.edu",
     "port": "15640"
   },
   "mr_registry": {
-    "host": "0.0.0.0",
+    "host": "unix1.andrew.cmu.edu",
     "port": "12345"
   },
   "namenode port": "15641",
   "jobtracker port": "12346",
   "datanode": [
-    { "port": "15462", "dir": "./0/" },
-    { "port": "15463", "dir": "./1/" }
+    { "port": "15462", "dir": "/tmp/erdongl0/" },
+    { "port": "15463", "dir": "/tmp/erdongl1/" },
+    { "port": "15464", "dir": "/tmp/erdongl2/" },
+    { "port": "15465", "dir": "/tmp/erdongl3/" }
   ],
   "tasktracker": [
-    { "port": "12347", "dir": "./d0/"},
-    { "port": "12348", "dir": "./d1/"}
+    { "port": "12347", "dir": "/tmp/yanan0/"},
+    { "port": "12348", "dir": "/tmp/yanan1/"},
+    { "port": "12349", "dir": "/tmp/yanan2/"},
+    { "port": "12350", "dir": "/tmp/yanan3/"}
   ]
 }
