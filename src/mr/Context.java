@@ -15,6 +15,11 @@ import mr.common.Constants.TASK_TP;
 import mr.io.Writable;
 import mr.io.TextWritable;
 
+/**
+ * Context stores results of Mapper and Reducer
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class Context {
     private String job_id = null;
     private String task_id = null; //mapper id or reducer id
@@ -29,8 +34,8 @@ public class Context {
 
     /**
      * Constructor
-     * @param job_id
-     * @param task_id
+     * @param job_id job's id
+     * @param task_id task's id
      * @param reducer_ct number of reducers
      * @param dir dir to read from
      * @param tp task type, reducer/mapper
@@ -45,21 +50,37 @@ public class Context {
         this.task_tp = tp;
     }
 
+    /**
+     * Get the size of each partition
+     * @return size of each partition
+     */
     public HashMap<String, Integer> get_idSize()
     {
         return this.idSize;
     }
 
+    /**
+     * Get the job id
+     * @return job id
+     */
     public String get_JobID()
     {
         return this.job_id;
     }
 
+    /**
+     * Get the task id
+     * @return task is
+     */
     public String get_TaskID()
     {
         return this.task_id;
     }
 
+    /**
+     * Get the file directory that stores the reducer results
+     * @return the file directory that stores the results
+     */
     public String getContents() throws IOException
     {
         /* flush remaining contents */
@@ -145,6 +166,11 @@ public class Context {
             partitionFiles.get(i).close();
     }
 
+    /**
+     * Wrtie a record to Context
+     * @param key key of record
+     * @param value value of record
+     */
     public void write(Writable key, Writable value)
     {
         Record record = new Record(key, String.valueOf(numBuffers));
@@ -155,6 +181,9 @@ public class Context {
             writeBuffer();
     }
 
+    /**
+     * Dump sorted content to a file when buffer gets full
+     */
     private void writeBuffer()
     {
         /* sort records */

@@ -11,6 +11,11 @@ import mr.io.Writable;
 import mr.io.IntWritable;
 import mr.io.TextWritable;
 
+/**
+ * WordCount counts word in a document
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class WordCount
 {
   public static class WordCountMapper extends Mapper<TextWritable, TextWritable, TextWritable, IntWritable>

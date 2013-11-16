@@ -11,6 +11,11 @@ import java.util.HashMap;
 import mr.io.Writable;
 import mr.io.TextWritable;
 
+/**
+ * Reducer's class
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
     private static final long serialVersionUID = 99l;
 

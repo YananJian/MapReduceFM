@@ -37,6 +37,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Implementation of the remote interface TaskTracker
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class TaskTrackerImpl implements TaskTracker, Callable{
     String registryHost = null;
     int mrPort = 0;

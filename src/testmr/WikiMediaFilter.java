@@ -11,6 +11,11 @@ import mr.io.Writable;
 import mr.io.IntWritable;
 import mr.io.TextWritable;
 
+/**
+ * WikiMediaFilter performs a simple analysis for a pagecount record
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class WikiMediaFilter
 {
   public static class FilterMapper extends Mapper<TextWritable, TextWritable, TextWritable, IntWritable>

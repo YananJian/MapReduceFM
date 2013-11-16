@@ -7,11 +7,17 @@ import java.util.List;
 import mr.Mapper;
 import mr.Reducer;
 
+/**
+ * Remote interface for TaskTracker
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public interface TaskTracker extends Remote, java.io.Serializable {
-	/**
+    /**
      * set number of reducers
+     * @param ct counter
      */
-	public void set_reducer_ct(int ct) throws RemoteException;
+    public void set_reducer_ct(int ct) throws RemoteException;
     /**
      * start mapper task
      * @param job_id

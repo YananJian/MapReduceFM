@@ -1,5 +1,10 @@
 package mr.common;
 
+/**
+ * Constants MapReduceFM uses
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class Constants {
     public enum MSG_TP {
         REQ_BLK, REL_BLK, SET_JOB_STATUS, 

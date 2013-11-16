@@ -28,7 +28,11 @@ import mr.common.Constants.*;
 import mr.common.Msg;
 import dfs.NameNode;
 
-
+/**
+ * Implementation of the remote interface JobTracker
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class JobTrackerImpl implements JobTracker, Callable {
     String registryHost = null;
     int mrPort = 0;
@@ -89,6 +93,9 @@ public class JobTrackerImpl implements JobTracker, Callable {
      * Sum the sizes of partitions given back by mapper tasks,
      * Choose the Top N (N = num of reducers) sizes, for each partition,
      * allocate reducers on the machine that has most resources.
+     *
+     * @param jobID job's id
+     * @return a hashmap of the assignment
      *
      * Eg. We have 2 reducers.
      * Machine A has partition k1 = 1KB, k2 = 1MB
@@ -170,7 +177,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
         TaskTracker tt;
         try {
             tt = this.alive_tasktrackers.get(machineID);
-            /**
+            /*
              * TaskTracker has to hash key to an ID based on REDUCER_NUM 
              * Thus to ensure same key on different mappers will have the same ID
              * So finally same key will go to the same reducer.
@@ -198,7 +205,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
 
     /**
      * When there's no ideal CPUs, pick arbitrary machine from the cluster
-     * @return
+     * @return an idle machine's id
      */
     public String pick_idle_machine()
     {
@@ -217,7 +224,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
         return arbi;
     }
-    
+
     /**
      * schedule mapper tasks
      * @param Job job that has to be scheduled
@@ -328,7 +335,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
 
     /**
      * Shuffle partitions among machines, thus to ensure same key goes to same reducer
-     * @param jobID
+     * @param jobID job's id
      * @param mcID_hashIDs
      */
     public void shuffle(String jobID, HashMap<String, List<String>> mcID_hashIDs)
@@ -372,7 +379,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
 
     /**
      * start reducer task
-     * @param job_id
+     * @param job_id job's id
      * @param write_path path that reducer will write to after reducer phase is over
      * @param mcID_hashIDs
      */

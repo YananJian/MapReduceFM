@@ -7,7 +7,11 @@ import mr.common.Constants.MSG_TP;
 import mr.common.Constants.TASK_STATUS;
 import mr.common.Constants.TASK_TP;
 
-
+/**
+ * Massage that passes between JobTracker/TaskTrackers
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class Msg implements java.io.Serializable{
     private MSG_TP msg_tp = null;
     private TASK_TP task_tp = null;
@@ -24,16 +28,16 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get message type, message type includes START_MAPPER, TERMINATE_MAPPER, HEARTBEAT
-     * @return
+     * @return message type
      */
     public MSG_TP getMsg_tp() {
         return msg_tp;
     }
 
     /**
-     * This system uses java concurrent.ExecutorService to run multiple threads, and uses 
+     * This system uses java concurrent.ExecutorService to run multiple threads, and uses
      * Future to get the return value of thread.
-     * @param future
+     * @param future return future of Callable
      */
     public void set_future(Future future)
     {
@@ -42,7 +46,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get Future Object, thus to get return value from thread
-     * @return
+     * @return future object
      */
     public Future get_future()
     {
@@ -51,7 +55,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set Msg type, msg type includes START_MAPPER, TERMINATE_MAPPER, HEARTBEAT
-     * @param msg_tp
+     * @param msg_tp message type
      */
     public void setMsg_tp(MSG_TP msg_tp) {
         this.msg_tp = msg_tp;
@@ -59,7 +63,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get content within the msg
-     * @return
+     * @return content
      */
     public Object getContent() {
         return content;
@@ -67,7 +71,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set content to the msg
-     * @param content
+     * @param content content of the message
      */
     public void setContent(Object content) {
         this.content = content;
@@ -75,7 +79,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get jobID
-     * @return
+     * @return job's id
      */
     public String getJob_id() {
         return job_id;
@@ -83,7 +87,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set jobID
-     * @param job_id
+     * @param job_id job's id
      */
     public void setJob_id(String job_id) {
         this.job_id = job_id;
@@ -91,7 +95,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get job status, job status includes RUNNING, TERMINATED, FINISHED
-     * @return
+     * @return job's status
      */
     public JOB_STATUS getJob_stat() {
         return job_stat;
@@ -99,7 +103,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set job status, job status includes RUNNING, TERMINATED, FINISHED
-     * @param job_stat
+     * @param job_stat job's status
      */
     public void setJob_stat(JOB_STATUS job_stat) {
         this.job_stat = job_stat;
@@ -107,7 +111,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get block path
-     * @return
+     * @return block's path
      */
     public String getBlk_fpath() {
         return blk_fpath;
@@ -115,7 +119,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set block path
-     * @param blk_fpath
+     * @param blk_fpath block's path
      */
     public void setBlk_fpath(String blk_fpath) {
         this.blk_fpath = blk_fpath;
@@ -123,7 +127,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get task ID
-     * @return
+     * @return task's id
      */
     public String getTask_id() {
         return task_id;
@@ -131,7 +135,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set task ID
-     * @param task_id
+     * @param task_id task's id
      */
     public void setTask_id(String task_id) {
         this.task_id = task_id;
@@ -139,7 +143,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get task type, task tp includes MAPPER, REDUCER
-     * @return
+     * @return task's type
      */
     public TASK_TP getTask_tp() {
         return task_tp;
@@ -147,7 +151,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set task type, task type includes MAPPER, REDUCER
-     * @param task_tp
+     * @param task_tp task's type
      */
     public void setTask_tp(TASK_TP task_tp) {
         this.task_tp = task_tp;
@@ -155,7 +159,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get task status, task status includes RUNNING, FINISHED, ERROR, TERMINATED
-     * @return
+     * @return task's status
      */
     public TASK_STATUS getTask_stat() {
         return task_stat;
@@ -163,7 +167,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set task status, task status incldues RUNNING, FINISHED, ERROR, TERMINATED
-     * @param task_stat
+     * @param task_stat task's status
      */
     public void setTask_stat(TASK_STATUS task_stat) {
         this.task_stat = task_stat;
@@ -171,7 +175,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get machineID
-     * @return
+     * @return machine id
      */
     public String getMachine_id() {
         return machine_id;
@@ -179,7 +183,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set machineID
-     * @param machine_id
+     * @param machine_id machine id
      */
     public void setMachine_id(String machine_id) {
         this.machine_id = machine_id;
@@ -187,7 +191,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set available process numbers
-     * @param num
+     * @param num #available processors
      */
     public void set_aval_procs(Integer num)
     {
@@ -196,7 +200,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get available process numbers
-     * @return
+     * @return #available processors
      */
     public Integer get_aval_procs()
     {
@@ -205,7 +209,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * get output path
-     * @return
+     * @return output path
      */
     public String getOutput_path() {
         return output_path;
@@ -213,7 +217,7 @@ public class Msg implements java.io.Serializable{
 
     /**
      * set output path
-     * @param output_path
+     * @param output_path output path
      */
     public void setOutput_path(String output_path) {
         this.output_path = output_path;

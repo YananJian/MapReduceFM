@@ -15,6 +15,11 @@ import mr.common.Constants.TASK_TP;
 import mr.io.TextWritable;
 import mr.io.Writable;
 
+/**
+ * Task records all status of a task
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class Task implements Callable {
     Class<? extends Mapper> mapper = null;
     Class<? extends Reducer> reducer = null;
@@ -30,11 +35,11 @@ public class Task implements Callable {
     NameNode namenode = null;
     String read_from_machine = null;
     Registry dfs_registry = null;
-    
+
     /**
      * Constructor
-     * @param job_id
-     * @param task_id
+     * @param job_id job's id
+     * @param task_id task's id
      * @param host host of DFS Registry
      * @param port port of DFS Registry
      */

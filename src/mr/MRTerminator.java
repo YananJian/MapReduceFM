@@ -7,20 +7,31 @@ import java.rmi.registry.Registry;
 
 import mr.core.JobTracker;
 
-
+/**
+ * Terminate MapReduceFM
+ * @author Yanan Jian
+ * @author Erdong Li
+ */
 public class MRTerminator {
-
     private String registryHost;
     private int registryPort;
+
+    /**
+     * Constructor
+     * @param registryHost registry's host
+     * @param registryPort registry's port
+     */
     public MRTerminator(String registryHost, int registryPort)
     {
         this.registryHost = registryHost;
         this.registryPort = registryPort;
     }
 
-      /**
-       * Terminate all jobs and JobTracker, TaskTrackers through RMI call
-       */
+    /**
+     * Terminate all jobs and JobTracker, TaskTrackers through RMI call
+     * @throws NotBoundException
+     * @throws RemoteException
+     */
     public void terminate() throws NotBoundException, RemoteException
     {
         Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
@@ -28,6 +39,11 @@ public class MRTerminator {
         jobTracker.terminate();
     }
 
+    /**
+     * Kill all jobs
+     * @throws NotBoundException
+     * @throws RemoteException
+     */
     public void kill() throws NotBoundException, RemoteException
     {
         Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
@@ -35,6 +51,12 @@ public class MRTerminator {
         jobTracker.kill();
     }
 
+    /**
+     * Kill a jobs with given job id
+     * @param jobID job's id
+     * @throws NotBoundException
+     * @throws RemoteException
+     */
     public void kill(String jobID) throws NotBoundException, RemoteException
     {
         Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
@@ -42,6 +64,10 @@ public class MRTerminator {
         jobTracker.kill(jobID);
     }
 
+    /**
+     * Main method of MRTerminator
+     * @param args command-line arguments
+     */
     public static void main(String[] args) {
         String registryHost = args[0];
         int registryPort = Integer.parseInt(args[1]);
