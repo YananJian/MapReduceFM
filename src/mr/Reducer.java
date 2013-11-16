@@ -18,16 +18,30 @@ public abstract class Reducer<K1, V1, K2, V2> implements Serializable {
     private HashMap<String, Integer> skipCounts;
     private PriorityQueue<Record> records;
 
+    /**
+     * initiate reducer, set dir, create priorityQueue for sorting
+     * @param dirname
+     */
     public void init(String dirname)
     {
         this.dirname = dirname;
         skipCounts = new HashMap<String, Integer>();
         records = new PriorityQueue<Record>();
     }
-
+    /**
+     * reduce function for client to override
+     * @param key
+     * @param values
+     * @param context
+     */
     public void reduce(TextWritable key, Iterable<Writable> values, Context context) {
     }
 
+    /**
+     * read partitioned files into bufferedReader based on hashID
+     * put key value pairs into priorityQueue for sorting
+     * @param hashID
+     */
     public void bootstrap(String hashID) {
         /* insert one record/file into records */
         File dir = new File(dirname);

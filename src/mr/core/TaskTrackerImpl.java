@@ -52,6 +52,16 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
     LinkedBlockingQueue<Msg> heartbeats = new LinkedBlockingQueue<Msg>();
     HashMap<String, Future> taskID_exec = new HashMap<String, Future>();
 
+    /**
+     * Constructor
+     * @param registryHost host of registry, the MapReduceFM uses RMI for message passing
+     * @param mrPort mapreduceFM's registry port
+     * @param dfsPort DFS's port
+     * @param selfPort this tasktracker's port
+     * @param id this tasktracker's identifier
+     * @param read_dir the directory that this tasktracker is going to read from
+     * @param reducer_ct number of reducers
+     */
     public TaskTrackerImpl(String registryHost, String mrPort, String dfsPort, String selfPort, int id, String read_dir, int reducer_ct)
     {
         this.id = id;
@@ -73,6 +83,10 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         }
     }
 
+    /**
+     * terminate a task
+     * @param taskID ID of the task
+     */
     public void terminate(String taskID)
     {
         Future f = taskID_exec.get(taskID);
@@ -80,6 +94,9 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         System.out.println("Task "+taskID+" terminated");
     }
 
+    /**
+     * initiate process, export stub, send initiate message to JobTracker
+     */
     public void init()
     {
         try {
@@ -111,6 +128,12 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         }
     }
 
+    /**
+     * read all partitioned filenames from the specified directory based on the hashedID
+     * @param path DIR to read from
+     * @param hashID partitions are hashed based on reducer numbers, 
+     * this ID determines what partitions should be processed by a specific task
+     */
     public List<String> readDIR(String path, String hashID)
     {
         File dir = new File(path);
@@ -162,6 +185,15 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         }
     }
 
+    /**
+     * start mapper task
+     * @param job_id
+     * @param mapper_id
+     * @param block_id
+     * @param read_from_machine machine to read block from 
+     * @param mapper mapper Class
+     * @param clspath path of mapper Class
+     */
     @Override
     public void start_map(String job_id, String mapper_id, String block_id, String read_from_machine, Class<? extends Mapper> mapper, String clspath) {
         ClassDownloader dn = new ClassDownloader(clspath, clspath, registryHost, dfsPort);
@@ -200,6 +232,14 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         this.heartbeats.offer(msg);
     }
 
+    /**
+     * start reducer task
+     * @param job_id
+     * @param reducer_id
+     * @param write_path path for writing outputs
+     * @param reducer reducer Class
+     * @param clspath path of reducer Class
+     */
     public void start_reducer(String job_id, String reducer_id, String write_path, Class<? extends Reducer> reducer, String clspath)
     {
         ClassDownloader dn = new ClassDownloader(clspath, clspath, registryHost, dfsPort);
@@ -233,11 +273,18 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         this.heartbeats.offer(msg);
     }
 
+    /**
+     * set number of reducers
+     */
     @Override
     public void set_reducer_ct(int ct) {
         this.reducer_ct = ct;
     }
 
+    /**
+     * mappers are asynchronous, this function checks if mapper is finished or terminated
+     * @param msg
+     */
     private void check_mapper(Msg msg)
     {
         Future f = msg.get_future();
@@ -282,6 +329,10 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         }
     }
 
+    /**
+     * reducers are asynchronous, this function checks if reducer is finished or terminated
+     * @param msg
+     */
     private void check_reducer(Msg msg)
     {
         Future f1 = msg.get_future();
@@ -342,6 +393,9 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         }
     }
 
+    /**
+     * thread function, send heartbeat message to JobTracker
+     */
     @Override
     public Object call() throws RemoteException, InterruptedException {
         while(true)
@@ -369,6 +423,9 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
     public void heartbeat() throws RemoteException {
     }
 
+    /**
+     * terminate this TaskTracker
+     */
     @Override
     public void terminate_self() throws RemoteException
     {

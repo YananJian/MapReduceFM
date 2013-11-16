@@ -27,6 +27,14 @@ public class Context {
     private TASK_TP task_tp = null;
     private final int kBufferSize = 1000;
 
+    /**
+     * Constructor
+     * @param job_id
+     * @param task_id
+     * @param reducer_ct number of reducers
+     * @param dir dir to read from
+     * @param tp task type, reducer/mapper
+     */
     public Context(String job_id, String task_id, int reducer_ct, String dir, TASK_TP tp)
     {
         this.job_id = job_id;
@@ -60,6 +68,12 @@ public class Context {
         return bufferPathPrefix + "0";
     }
 
+    /**
+     * partition function: writes each line into a fixed size TreeMap, 
+     * when the fixed size buffer is filled up, 
+     * dump the buffer to partitioned file 
+     * @throws IOException
+     */
     protected void partition() throws IOException
     {
         File dirFile = new File(dir);

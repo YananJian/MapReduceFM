@@ -196,6 +196,10 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * When there's no ideal CPUs, pick arbitrary machine from the cluster
+     * @return
+     */
     public String pick_idle_machine()
     {
         Iterator<Entry<String, Integer>> iter = this.cpu_resource.entrySet().iterator();
@@ -213,7 +217,11 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
         return arbi;
     }
-
+    
+    /**
+     * schedule mapper tasks
+     * @param Job job that has to be scheduled
+     */
     public void schedule(Job job)
     {
         try {
@@ -318,6 +326,11 @@ public class JobTrackerImpl implements JobTracker, Callable {
         return mcIDs;
     }
 
+    /**
+     * Shuffle partitions among machines, thus to ensure same key goes to same reducer
+     * @param jobID
+     * @param mcID_hashIDs
+     */
     public void shuffle(String jobID, HashMap<String, List<String>> mcID_hashIDs)
     {
         System.out.println("Shuffling ....");
@@ -357,6 +370,12 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * start reducer task
+     * @param job_id
+     * @param write_path path that reducer will write to after reducer phase is over
+     * @param mcID_hashIDs
+     */
     public void start_reducer(String job_id, String write_path, HashMap<String, List<String>> mcID_hashIDs)
     {
         Iterator<Entry<String, List<String>>> iter = mcID_hashIDs.entrySet().iterator();
@@ -386,6 +405,12 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * Determine if task has finished
+     * @param jobID ID of the job
+     * @param tp type of task (mapper/reducer)
+     * @return
+     */
     public boolean is_task_finished(String jobID, TASK_TP tp)
     {
         System.out.println("Checking ------------------------");
@@ -415,6 +440,10 @@ public class JobTrackerImpl implements JobTracker, Callable {
         return finished;
     }
 
+    /**
+     * restart jobs when encountered failure
+     * @param machineID the ID of machine that was down
+     */
     private void restart_jobs(String machineID)
     {
         System.out.println("--------In restart jobs");
@@ -433,6 +462,9 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * heartbeat message processor, process message sent from TaskTrackers
+     */
     @Override
     public void heartbeat(Msg msg)
     {
@@ -499,6 +531,10 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * describe job status
+     * @param jobID
+     */
     @Override
     public String desc_job(String jobID) throws RemoteException
     {
@@ -539,6 +575,9 @@ public class JobTrackerImpl implements JobTracker, Callable {
         return sb.toString();
     }
 
+    /**
+     * describe all jobs' status
+     */
     @Override
     public String desc_jobs() throws RemoteException
     {
@@ -553,6 +592,11 @@ public class JobTrackerImpl implements JobTracker, Callable {
         return sb.toString();
     }
 
+    /**
+     * terminate mapper tasks
+     * @param jobID ID of job
+     * @param mapper_status status of mapper tasks of this job
+     */
     private void terminate_mappers(String jobID, HashMap<String,TASK_STATUS> mapper_status)
     {
         System.out.println("----------In terminate_mappers");
@@ -585,6 +629,11 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * terminate reducer tasks
+     * @param jobID ID of job
+     * @param reducer_status status of reducer tasks of this job
+     */
     private void terminate_reducers(String jobID, HashMap<String,TASK_STATUS> reducer_status)
     {
         System.out.println("----------In terminate_reducers");
@@ -617,6 +666,10 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * maintain integrity of running_jobs
+     * @param jobID
+     */
     private void remove_from_running_jobs(String jobID)
     {
         Set<Entry<String, Set<String>>> set = running_jobs.entrySet();
@@ -635,6 +688,10 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * terminate specific job based on jobID
+     * @param jobID
+     */
     public void terminate_job(String jobID)
     {
         System.out.println("--------In terminate Job");
@@ -648,11 +705,18 @@ public class JobTrackerImpl implements JobTracker, Callable {
         job.set_jobStatus(JOB_STATUS.TERMINATED);
     }
 
+    /**
+     * print a line for debugging
+     */
     @Override
     public void print() throws RemoteException {
         System.out.println("This is JobTracker");
     }
 
+    /**
+     * periodically check if TaskTrackers are still alive 
+     * by sending heartbeat request to TaskTrackers
+     */
     public void health_check()
     {
         while(true)
@@ -687,11 +751,17 @@ public class JobTrackerImpl implements JobTracker, Callable {
         return null;
     }
 
+    /**
+     * TaskTrackers register themselves to JobTracker
+     */
     @Override
     public void register(String machineID, TaskTracker tt) throws RemoteException {
         alive_tasktrackers.put(machineID, tt);
     }
 
+    /**
+     * terminate all jobs
+     */
     private void terminate_allJobs()
     {
         Set<Entry<String, Job>> jobset = jobID_Job.entrySet();
@@ -709,6 +779,9 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * terminate map reduce framework service
+     */
     @Override
     public void terminate() throws RemoteException{
         terminated = true;
@@ -732,6 +805,9 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    /**
+     * kill all jobs
+     */
     public void kill() throws RemoteException
     {
     	if (this.terminated)
@@ -739,6 +815,10 @@ public class JobTrackerImpl implements JobTracker, Callable {
     	this.terminate_allJobs();
     }
     
+    /**
+     * kill a specific job based on jobID
+     * @param jobID
+     */
     public void kill(String jobID) throws RemoteException
     {
     	if (this.terminated)
