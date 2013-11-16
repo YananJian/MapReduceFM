@@ -1,7 +1,7 @@
 {
-  "block size": "2",
+  "block size": "64",
   "replication": "2",
-  "reducer": "5",
+  "reducer": "2",
   "healthcheck interval": "5",
   "fsImage dir": "./fsImage",
   "dfs_registry": {
@@ -16,12 +16,10 @@
   "jobtracker port": "12346",
   "datanode": [
     { "port": "15462", "dir": "./0/" },
-    { "port": "15463", "dir": "./1/" },
-    { "port": "15464", "dir": "./2/" }
+    { "port": "15463", "dir": "./1/" }
   ],
   "tasktracker": [
     { "port": "12347", "dir": "./d0/"},
-    { "port": "12348", "dir": "./d1/"},
-    { "port": "12349", "dir": "./d2/"}
+    { "port": "12348", "dir": "./d1/"}
   ]
 }
