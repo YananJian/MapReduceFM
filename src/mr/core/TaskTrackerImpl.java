@@ -115,6 +115,11 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
           }
     }
 
+    /**
+     * write content to file
+     * @param path path of file
+     * @param content content to be write
+     */
     public void writebr(String path, byte[]content)
     {
         try {
@@ -151,7 +156,11 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         }
         return ret_names;
     }
-
+    /**
+     * read content from file
+     * @param path Path of file
+     * @param name Filename
+     */
     public String readstr(String path, String name)
     {
         StringBuilder content = new StringBuilder();
@@ -419,6 +428,9 @@ public class TaskTrackerImpl implements TaskTracker, Callable{
         }
     }
 
+    /**
+     * for JobTracker to call, thus to ensure the TaskTracker is still alive 
+     */
     @Override
     public void heartbeat() throws RemoteException {
     }

@@ -69,7 +69,14 @@ public interface JobTracker extends Remote, java.io.Serializable{
      */
     public void terminate() throws RemoteException;
     
+    /**
+     * kill all jobs
+     */
     public void kill() throws RemoteException;
     
+    /**
+     * kill a specific job based on jobID
+     * @param jobID
+     */
     public void kill(String jobID) throws RemoteException;
 }

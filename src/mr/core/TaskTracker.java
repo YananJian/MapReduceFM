@@ -31,7 +31,17 @@ public interface TaskTracker extends Remote, java.io.Serializable {
      * @param clspath path of reducer Class
      */
     public void start_reducer(String job_id, String reducer_id, String write_path, Class<? extends Reducer> reducer, String clspath) throws RemoteException;
+    /**
+     * write content to file
+     * @param path path of file
+     * @param content content to be write
+     */
     public void writestr(String path, String content) throws RemoteException;
+    /**
+     * read content from file
+     * @param path Path of file
+     * @param name Filename
+     */
     public String readstr(String path, String name) throws RemoteException;
     /**
      * read all partitioned filenames from the specified directory based on the hashedID
@@ -45,6 +55,9 @@ public interface TaskTracker extends Remote, java.io.Serializable {
      * @param taskID ID of the task
      */
     public void terminate(String taskID) throws RemoteException;
+    /**
+     * for JobTracker to call, thus to ensure the TaskTracker is still alive 
+     */
     public void heartbeat() throws RemoteException;
     /**
      * terminate this TaskTracker
