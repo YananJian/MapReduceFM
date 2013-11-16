@@ -16,6 +16,11 @@ public class Test {
 		public void map(TextWritable key, TextWritable val, Context context) {
 			TextWritable _val = new TextWritable();
 			_val.setVal("1");
+			try {
+		        Thread.sleep(10000);
+		      } catch (Exception e) {
+		        // igore
+		      }
 			context.write(key, _val);
 		}		
 	}
@@ -32,6 +37,11 @@ public class Test {
 				sum += Integer.parseInt(_val.getVal());
 			}
 			res_sum.setVal(sum);
+			try {
+		        Thread.sleep(10000);
+		      } catch (Exception e) {
+		        // igore
+		      }
 			context.write(key, res_sum);
 			
 			System.out.println("-----result: "+key.getVal() + "\t"+String.valueOf(sum));

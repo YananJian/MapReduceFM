@@ -409,6 +409,8 @@ public class JobTrackerImpl implements JobTracker, Callable {
             }
             else if (status == TASK_STATUS.FINISHED)
                 System.out.println("Task "+mapperID+" is finished");
+            else if (status == TASK_STATUS.TERMINATED)
+            	System.out.println("Task "+mapperID+" is terminated");
         }
         return finished;
     }
@@ -447,6 +449,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
                 int aval_cpus = this.cpu_resource.get(machineID);
                 aval_cpus++;
                 cpu_resource.put(machineID, aval_cpus);
+                
                 HashMap<String, Integer> ret = (HashMap<String, Integer>)msg.getContent();
                 HashMap<String, HashMap<String, Integer>> mc_hash_size = job_mc_hash_size.get(jobID);
                 if (mc_hash_size == null)
@@ -569,6 +572,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
                     {
                         tt.terminate(mapperID);
                         System.out.println("Task "+mapperID +" is terminated");
+                        this.jobID_Job.get(jobID).set_mapperStatus(mapperID, TASK_STATUS.TERMINATED);
                     }
                 } catch (AccessException e) {
                     e.printStackTrace();
@@ -600,6 +604,7 @@ public class JobTrackerImpl implements JobTracker, Callable {
                     {
                         tt.terminate(reducerID);
                         System.out.println("Task "+reducerID +" is terminated");
+                        this.jobID_Job.get(jobID).set_reducerStatus(reducerID, TASK_STATUS.TERMINATED);
                     }
                 } catch (AccessException e) {
                     e.printStackTrace();
@@ -727,6 +732,20 @@ public class JobTrackerImpl implements JobTracker, Callable {
         }
     }
 
+    public void kill() throws RemoteException
+    {
+    	if (this.terminated)
+    		return;
+    	this.terminate_allJobs();
+    }
+    
+    public void kill(String jobID) throws RemoteException
+    {
+    	if (this.terminated)
+    		return;
+    	this.terminate_job(jobID);
+    }
+    
     public static void main(String[] args) {
         JobTrackerImpl jt = new JobTrackerImpl();
         String registryHost = args[0];

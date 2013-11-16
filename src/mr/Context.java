@@ -97,11 +97,16 @@ public class Context {
             String key = (String) record.getKey().getVal();
             String value = (String) record.getValues().iterator().next().getVal();
             String bufferId = record.getFileName();
+            if ((bufferId== null) || (bufferId.equals("")))
+            	break;
             int partitionId = Math.abs(key.hashCode() % reducer_ct);
             String path = dir + task_id + '@' + String.valueOf(partitionId);
             String str = key + "\t" + value + "\n";
             partitionFiles.get(partitionId).write(str);
             /* get the next record from buffer */
+            BufferedReader br = bufferFiles.get(Integer.parseInt(bufferId));
+            if (br == null)
+            	break;
             String line = bufferFiles.get(Integer.parseInt(bufferId)).readLine();
             if (line != null) {
                 String[] tokens = line.split("\t");

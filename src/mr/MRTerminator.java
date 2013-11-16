@@ -27,13 +27,36 @@ public class MRTerminator {
 	    JobTracker jobTracker = (JobTracker) registry.lookup("JobTracker");
 	    jobTracker.terminate();
 	  }
+	
+	public void kill() throws NotBoundException, RemoteException
+	{
+		Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
+	    JobTracker jobTracker = (JobTracker) registry.lookup("JobTracker");
+	    jobTracker.kill();
+	}
+	
+	public void kill(String jobID) throws NotBoundException, RemoteException
+	{
+		Registry registry = LocateRegistry.getRegistry(registryHost, registryPort);
+	    JobTracker jobTracker = (JobTracker) registry.lookup("JobTracker");
+	    jobTracker.kill(jobID);
+	}
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String registryHost = args[0];
 	    int registryPort = Integer.parseInt(args[1]);
+	    String cmd = args[2];
 	    MRTerminator mrt = new MRTerminator(registryHost, registryPort);
 	    try {
-	        mrt.terminate();
+	    	if (cmd.equals("t"))
+	    		mrt.terminate();
+	    	else if (cmd.equals("k"))
+	    	{
+	    		if (args.length > 3)
+	    			mrt.kill(args[3]);
+	    		else
+	    			mrt.kill();
+	    	}
 	      } catch (Exception e) {
 	        e.printStackTrace();
 	      }
